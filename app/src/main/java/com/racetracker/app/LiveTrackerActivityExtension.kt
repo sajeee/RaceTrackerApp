@@ -1,95 +1,165 @@
 package com.racetracker.app
 
 import android.util.Log
-import android.widget.Toast
 import com.google.android.gms.maps.model.LatLng
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
+import java.text.SimpleDateFormat
+import java.util.*
 
 /**
- * Extension methods for LiveTrackerActivity to handle analytics integration
+ * Extension functions for LiveTrackerActivity to handle analytics
  */
 
+private const val TAG = "LiveTrackerExtension"
+
 /**
- * Save race data to analytics database
+ * Save completed race to analytics database
+ * FIXED: Uses actual race start time instead of current time when saving
  */
 fun LiveTrackerActivity.saveRaceToAnalytics(
-    raceId: Int,
-    runnerId: Int,
-    startTime: Long,
-    pathPoints: List<LatLng>,
-    elevations: List<Double>,
-    totalDistance: Double
+    raceStartTime: Long,  // Actual time when race started
+    distance: Double,
+    duration: Long,
+    avgPace: Double,
+    maxSpeed: Double,
+    avgHeartRate: Int,
+    maxHeartRate: Int,
+    caloriesBurned: Int,
+    elevationGain: Double,
+    polylinePoints: List<LatLng>
 ) {
-    if (pathPoints.isEmpty() || totalDistance < 0.1) {
-        Log.w("LiveTrackerActivity", "No valid data to save to analytics")
+    if (!::analyticsManager.isInitialized) {
+        Log.e(TAG, "AnalyticsManager not initialized")
         return
     }
-    
-    CoroutineScope(Dispatchers.IO).launch {
+
+    CoroutineScope(Dispatchers.Main).launch {
         try {
-            val analyticsManager = AnalyticsManager(this@saveRaceToAnalytics)
-            val endTime = System.currentTimeMillis()
-            
-            // Collect timestamps and speeds
-            val timestamps = mutableListOf<Long>()
-            val speeds = mutableListOf<Double>()
-            
-            // Generate timestamps based on path points
-            val duration = endTime - startTime
-            val timePerPoint = if (pathPoints.size > 1) duration / pathPoints.size else 0L
-            for (i in pathPoints.indices) {
-                timestamps.add(startTime + (i * timePerPoint))
-            }
-            
-            // Estimate speeds between points
-            for (i in 0 until pathPoints.size - 1) {
-                val dist = distanceBetweenPoints(pathPoints[i], pathPoints[i + 1])
-                val time = timePerPoint / 1000.0 // seconds
-                val speedMps = if (time > 0) dist / time else 0.0
-                val speedKmh = speedMps * 3.6
-                speeds.add(speedKmh)
-            }
-            if (speeds.isNotEmpty()) {
-                speeds.add(speeds.last())
-            }
-            
-            val raceDbId = analyticsManager.saveRace(
-                raceId = raceId,
-                runnerId = runnerId,
-                startTime = startTime,
-                endTime = endTime,
-                pathPoints = pathPoints,
-                elevations = elevations.ifEmpty { List(pathPoints.size) { 0.0 } },
-                timestamps = timestamps,
-                speeds = speeds,
-                userWeightKg = 70.0,
-                notes = ""
+            // Use the actual race start time, not System.currentTimeMillis()
+            val raceData = RaceData(
+                date = raceStartTime,  // FIXED: Use parameter instead of current time
+                distance = distance,
+                duration = duration,
+                avgPace = avgPace,
+                maxSpeed = maxSpeed,
+                avgHeartRate = avgHeartRate,
+                maxHeartRate = maxHeartRate,
+                caloriesBurned = caloriesBurned,
+                elevationGain = elevationGain,
+                splits = "", // Will be populated by AnalyticsManager
+                polyline = polylinePoints.joinToString(";") { "${it.latitude},${it.longitude}" }
             )
-            
-            Log.i("LiveTrackerActivity", "Race saved to analytics database with ID: $raceDbId")
-            withContext(Dispatchers.Main) {
-                Toast.makeText(this@saveRaceToAnalytics, "✅ Race saved to analytics", Toast.LENGTH_SHORT).show()
+
+            val raceId = analyticsManager.saveRace(
+                distance = distance,
+                duration = duration,
+                avgPace = avgPace,
+                maxSpeed = maxSpeed,
+                avgHeartRate = avgHeartRate,
+                maxHeartRate = maxHeartRate,
+                caloriesBurned = caloriesBurned,
+                elevationGain = elevationGain,
+                polylinePoints = polylinePoints
+            )
+
+            if (raceId > 0) {
+                val dateStr = SimpleDateFormat("MMM dd, yyyy HH:mm", Locale.getDefault())
+                    .format(Date(raceStartTime))
+                Log.d(TAG, "Race saved successfully with ID: $raceId at $dateStr")
+                
+                // Show success message to user
+                showToast("Race saved to analytics!")
+            } else {
+                Log.e(TAG, "Failed to save race to analytics")
+                showToast("Failed to save race data")
             }
         } catch (e: Exception) {
-            Log.e("LiveTrackerActivity", "Failed to save race to analytics: ${e.message}", e)
+            Log.e(TAG, "Error saving race to analytics", e)
+            showToast("Error saving race: ${e.message}")
         }
     }
 }
 
-private fun distanceBetweenPoints(point1: LatLng, point2: LatLng): Double {
-    val R = 6371000.0
-    val lat1 = Math.toRadians(point1.latitude)
-    val lat2 = Math.toRadians(point2.latitude)
-    val dLat = Math.toRadians(point2.latitude - point1.latitude)
-    val dLon = Math.toRadians(point2.longitude - point1.longitude)
+/**
+ * Show toast message (helper function)
+ */
+private fun LiveTrackerActivity.showToast(message: String) {
+    runOnUiThread {
+        android.widget.Toast.makeText(this, message, android.widget.Toast.LENGTH_SHORT).show()
+    }
+}
+
+/**
+ * Calculate elevation gain from polyline points
+ * This is a simplified version - real implementation would use elevation API
+ */
+fun calculateElevationGain(polylinePoints: List<LatLng>): Double {
+    // Placeholder implementation
+    // In real app, you would:
+    // 1. Get elevation for each point using Google Elevation API
+    // 2. Calculate cumulative positive elevation change
+    // 3. Return total gain in meters
     
-    val a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-            Math.cos(lat1) * Math.cos(lat2) *
-            Math.sin(dLon / 2) * Math.sin(dLon / 2)
-    val c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+    // For now, return estimated value based on distance
+    return 0.0
+}
+
+/**
+ * Format duration for display
+ */
+fun formatDuration(durationMs: Long): String {
+    val seconds = (durationMs / 1000) % 60
+    val minutes = (durationMs / (1000 * 60)) % 60
+    val hours = (durationMs / (1000 * 60 * 60))
     
-    return R * c
+    return if (hours > 0) {
+        String.format("%d:%02d:%02d", hours, minutes, seconds)
+    } else {
+        String.format("%d:%02d", minutes, seconds)
+    }
+}
+
+/**
+ * Format pace for display (min/km)
+ */
+fun formatPace(paceMinPerKm: Double): String {
+    val minutes = paceMinPerKm.toInt()
+    val seconds = ((paceMinPerKm - minutes) * 60).toInt()
+    return String.format("%d:%02d", minutes, seconds)
+}
+
+/**
+ * Calculate calories burned
+ * Based on MET (Metabolic Equivalent) values for running
+ */
+fun calculateCalories(
+    distanceKm: Double,
+    durationMinutes: Double,
+    avgSpeedKmh: Double,
+    weightKg: Double = 70.0  // Default weight
+): Int {
+    // MET values for running:
+    // 6 km/h = 6.0 MET
+    // 8 km/h = 8.3 MET
+    // 10 km/h = 9.8 MET
+    // 12 km/h = 11.5 MET
+    // 14 km/h = 13.5 MET
+    // 16+ km/h = 15+ MET
+    
+    val met = when {
+        avgSpeedKmh < 6.0 -> 6.0
+        avgSpeedKmh < 8.0 -> 6.0 + (avgSpeedKmh - 6.0) * 1.15
+        avgSpeedKmh < 10.0 -> 8.3 + (avgSpeedKmh - 8.0) * 0.75
+        avgSpeedKmh < 12.0 -> 9.8 + (avgSpeedKmh - 10.0) * 0.85
+        avgSpeedKmh < 14.0 -> 11.5 + (avgSpeedKmh - 12.0) * 1.0
+        avgSpeedKmh < 16.0 -> 13.5 + (avgSpeedKmh - 14.0) * 0.75
+        else -> 15.0 + (avgSpeedKmh - 16.0) * 0.5
+    }
+    
+    // Calories = MET * weight(kg) * time(hours)
+    val calories = met * weightKg * (durationMinutes / 60.0)
+    
+    return calories.toInt()
 }

@@ -1,51 +1,61 @@
 package com.racetracker.app
 
-import android.os.Handler
-import android.os.Looper
-import kotlin.math.abs
+import android.content.Context
+import android.widget.Toast
+import java.util.concurrent.TimeUnit
 
 class PaceAlertManager(
-    private val onTooSlow: (() -> Unit)? = null,
-    private val onTooFast: (() -> Unit)? = null,
-    private val onHrZoneAlert: ((zone: Int, hr: Int) -> Unit)? = null
+    private val context: Context,
+    private val targetPace: Float
 ) {
-    var paceLowerMinsPerKm: Double? = null // e.g., 6.0 means 6:00/km
-    var paceUpperMinsPerKm: Double? = null // e.g., 4.0 means 4:00/km
+    private var lastAlertTime: Long = 0
+    private val alertCooldown = TimeUnit.SECONDS.toMillis(30) // Alert every 30 seconds max
+    private var hasStartedTracking = false
+    private var lastDistance = 0.0
 
-    // HR zones as simple bounds in bpm for each zone (1..5)
-    var hrZones: List<Int> = listOf() // [z1_upper, z2_upper, z3_upper, ...]
-
-    private val handler = Handler(Looper.getMainLooper())
-    private var lastTooSlowSent = 0L
-    private var lastTooFastSent = 0L
-
-    fun checkPace(speedMps: Double) {
-        if (speedMps <= 0) return
-        val paceMinPerKm = 1000.0 / speedMps / 60.0
-        val now = System.currentTimeMillis()
-        paceLowerMinsPerKm?.let { lower ->
-            if (paceMinPerKm > lower && now - lastTooSlowSent > 15_000) {
-                lastTooSlowSent = now
-                onTooSlow?.invoke()
-            }
-        }
-        paceUpperMinsPerKm?.let { upper ->
-            if (paceMinPerKm < upper && now - lastTooFastSent > 15_000) {
-                lastTooFastSent = now
-                onTooFast?.invoke()
-            }
-        }
+    fun reset() {
+        lastAlertTime = 0
+        hasStartedTracking = false
+        lastDistance = 0.0
     }
 
-    fun checkHeartRate(hr: Int) {
-        if (hrZones.isEmpty()) return
-        for (i in hrZones.indices) {
-            if (hr <= hrZones[i]) {
-                onHrZoneAlert?.invoke(i + 1, hr)
-                return
-            }
+    fun checkPace(currentPace: Double, currentDistance: Double) {
+        // Only check pace if we've moved at least 0.1 km (100 meters)
+        if (currentDistance < 0.1) {
+            return
         }
-        // if above last zone
-        onHrZoneAlert?.invoke(hrZones.size + 1, hr)
+
+        // Only alert if distance has actually changed
+        if (currentDistance == lastDistance) {
+            return
+        }
+        lastDistance = currentDistance
+
+        val currentTime = System.currentTimeMillis()
+        
+        // Check if enough time has passed since last alert
+        if (currentTime - lastAlertTime < alertCooldown) {
+            return
+        }
+
+        // Check if pace is too fast (more than 20% faster than target)
+        val paceDifference = targetPace - currentPace
+        if (paceDifference > targetPace * 0.2) {
+            Toast.makeText(
+                context,
+                "Pace too fast! Target: ${String.format("%.2f", targetPace)} min/km",
+                Toast.LENGTH_SHORT
+            ).show()
+            lastAlertTime = currentTime
+        }
+        // Check if pace is too slow (more than 20% slower than target)
+        else if (paceDifference < -targetPace * 0.2) {
+            Toast.makeText(
+                context,
+                "Pace too slow! Target: ${String.format("%.2f", targetPace)} min/km",
+                Toast.LENGTH_SHORT
+            ).show()
+            lastAlertTime = currentTime
+        }
     }
 }

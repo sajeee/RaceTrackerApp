@@ -1,119 +1,138 @@
 package com.racetracker.app
 
 import android.Manifest
-import android.app.AlertDialog
-import android.content.*
+import android.content.BroadcastReceiver
+import android.content.ComponentName
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
+import android.content.ServiceConnection
 import android.content.pm.PackageManager
-import android.graphics.*
-import android.location.LocationManager
-import android.net.Uri
-import android.os.*
-import android.provider.MediaStore
-import android.util.Log
-import android.view.Gravity
-import android.view.View
-import android.view.ViewGroup
-import android.widget.*
-import androidx.activity.result.contract.ActivityResultContracts
+import android.graphics.Color
+import android.os.Build
+import android.os.Bundle
+import android.os.Handler
+import android.os.IBinder
+import android.os.Looper
+import android.widget.Button
+import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import androidx.core.content.FileProvider
-import com.google.android.gms.maps.*
-import com.google.android.gms.maps.model.*
-import kotlinx.coroutines.*
-import java.io.File
-import java.io.FileOutputStream
-import java.io.OutputStream
+import androidx.localbroadcastmanager.content.LocalBroadcastManager
+import com.google.android.gms.maps.CameraUpdateFactory
+import com.google.android.gms.maps.GoogleMap
+import com.google.android.gms.maps.OnMapReadyCallback
+import com.google.android.gms.maps.SupportMapFragment
+import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.LatLngBounds
+import com.google.android.gms.maps.model.PolylineOptions
 import java.text.SimpleDateFormat
 import java.util.*
-import kotlin.math.max
-import android.media.MediaScannerConnection
-import android.provider.Settings
 
 class LiveTrackerActivity : AppCompatActivity(), OnMapReadyCallback {
 
-    private val TAG = "LiveTrackerActivity"
-    private val PREFS = "race_tracker_prefs"
+    private lateinit var googleMap: GoogleMap
+    private var trackingService: TrackingService? = null
+    private var isServiceBound = false
 
-    private var googleMap: GoogleMap? = null
-    private var polyline: Polyline? = null
-    private var runnerMarker: Marker? = null
-    private val pathPoints = mutableListOf<LatLng>()
-    private val elevations = mutableListOf<Double>()
+    // UI Elements
+    private lateinit var distanceText: TextView
+    private lateinit var paceText: TextView
+    private lateinit var timeText: TextView
+    private lateinit var heartRateText: TextView
+    private lateinit var cadenceText: TextView
+    private lateinit var startButton: Button
+    private lateinit var pauseButton: Button
+    private lateinit var stopButton: Button
 
-    private lateinit var tvDistance: TextView
-    private lateinit var tvSpeed: TextView
-    private lateinit var tvPace: TextView
-    private lateinit var btnStart: Button
-    private lateinit var btnStop: Button
-    private lateinit var tvTimer: TextView
-
-    // Summary overlay views (from your updated XML)
-    private var summaryCard: View? = null
-    private var textSummaryDistance: TextView? = null
-    private var textSummaryPace: TextView? = null
-    private var textSummarySpeed: TextView? = null
-    private var textSummaryElevation: TextView? = null
-    private var textSummaryDuration: TextView? = null
-    private var btnShareSummary: Button? = null
-
-    private var raceId = 1
-    private var runnerId = 1
-    private var startTime: Long = 0L
-    private var timerJob: Job? = null
-    private var totalDistance = 0.0
-    private var elevationGain = 0.0
-
+    // Tracking state
     private var isTracking = false
+    private var isPaused = false
+    private var startTime: Long = 0
+    private var pausedTime: Long = 0
+    private var totalPausedDuration: Long = 0
 
-    private val ACTION_TRACKING_UPDATE = "TRACKING_UPDATE"
+    // Performance Modules
+    private lateinit var paceAlertManager: PaceAlertManager
+    private lateinit var hydrationReminder: HydrationReminder
+    private lateinit var autoLapManager: AutoLapManager
+    private lateinit var bleHeartRateManager: BLEHeartRateManager
+    private lateinit var bleSensorManager: BLERunningSensorManager
+    private lateinit var cadenceDetector: CadenceDetector
+    private lateinit var trainingLoad: TrainingLoad
+    private lateinit var analyticsManager: AnalyticsManager
 
-    // Permission launcher for pre-Android 10 write storage (fallback)
-    private val requestWritePermission = registerForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { granted ->
-        if (!granted) {
-            Toast.makeText(this, "Storage permission required to save/share images on this OS version", Toast.LENGTH_LONG).show()
+    // Distance tracking
+    private var totalDistance = 0.0
+    private var lastValidLocation: LatLng? = null
+
+    // UI Update
+    private val uiUpdateHandler = Handler(Looper.getMainLooper())
+    private val uiUpdateRunnable = object : Runnable {
+        override fun run() {
+            if (isTracking && !isPaused) {
+                updateUIFromService()
+            }
+            uiUpdateHandler.postDelayed(this, 1000) // Update every second
         }
     }
 
-    private val permissionLauncher = registerForActivityResult(
-        ActivityResultContracts.RequestMultiplePermissions()
-    ) { perms ->
-        val fine = perms[Manifest.permission.ACCESS_FINE_LOCATION] == true
-        if (fine) ensureGpsEnabledOrPrompt()
-        else Toast.makeText(this, "Location permission is required", Toast.LENGTH_LONG).show()
+    // Service Connection
+    private val serviceConnection = object : ServiceConnection {
+        override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
+            val binder = service as TrackingService.LocalBinder
+            trackingService = binder.getService()
+            isServiceBound = true
+            
+            // Restore state if service was already tracking
+            trackingService?.let { service ->
+                if (service.isTracking) {
+                    isTracking = true
+                    isPaused = service.isPaused
+                    startTime = service.startTime
+                    totalPausedDuration = service.totalPausedDuration
+                    updateButtonStates()
+                    uiUpdateHandler.post(uiUpdateRunnable)
+                }
+            }
+        }
+
+        override fun onServiceDisconnected(name: ComponentName?) {
+            trackingService = null
+            isServiceBound = false
+        }
     }
 
-    // Receives location updates from TrackingService
-    private val trackingReceiver = object : BroadcastReceiver() {
+    // Broadcast Receiver for location updates
+    private val locationReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
-            if (intent == null) return
-
-            val lat = intent.getDoubleExtra("lat", 0.0)
-            val lon = intent.getDoubleExtra("lon", 0.0)
-            val distanceStr = intent.getStringExtra("distance") ?: "0.00"
-            val speedStr = intent.getStringExtra("speed") ?: "0.00"
-            val paceStr = intent.getStringExtra("pace") ?: "0.00"
-            val altitude = intent.getDoubleExtra("altitude", 0.0)
-
-            runOnUiThread {
-                // show distance on first line, IDs on second line so you can visually confirm/modify
-                tvDistance.text = "🏁 $distanceStr km\nRace:${raceId} Runner:${runnerId}"
-                tvSpeed.text = "⚡ $speedStr km/h"
-                tvPace.text = "⏱ $paceStr min/km"
-
-                if (lat != 0.0 && lon != 0.0) {
-                    val newPoint = LatLng(lat, lon)
-                    pathPoints.add(newPoint)
-                    if (altitude != 0.0) {
-                        elevations.add(altitude)
-                        computeElevationGain()
+            when (intent?.action) {
+                "LOCATION_UPDATE" -> {
+                    val latitude = intent.getDoubleExtra("latitude", 0.0)
+                    val longitude = intent.getDoubleExtra("longitude", 0.0)
+                    val newLocation = LatLng(latitude, longitude)
+                    
+                    // Update polyline on map
+                    updatePolyline(newLocation)
+                    
+                    // Calculate distance
+                    lastValidLocation?.let { lastLoc ->
+                        val distance = calculateDistance(lastLoc, newLocation)
+                        if (distance > 0 && distance < 100) { // Filter unrealistic jumps (>100m)
+                            totalDistance += distance
+                        }
                     }
-                    totalDistance = distanceStr.toDoubleOrNull() ?: totalDistance
-                    updatePolyline()
-                    updateMarker(newPoint)
-                    googleMap?.animateCamera(CameraUpdateFactory.newLatLngZoom(newPoint, 17f))
+                    lastValidLocation = newLocation
+                }
+                "HEART_RATE_UPDATE" -> {
+                    val heartRate = intent.getIntExtra("heart_rate", 0)
+                    updateHeartRateUI(heartRate)
+                }
+                "CADENCE_UPDATE" -> {
+                    val cadence = intent.getIntExtra("cadence", 0)
+                    updateCadenceUI(cadence)
                 }
             }
         }
@@ -123,390 +142,444 @@ class LiveTrackerActivity : AppCompatActivity(), OnMapReadyCallback {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_live_tracker)
 
-        // Restore state if coming back from background
-        savedInstanceState?.let {
-            isTracking = it.getBoolean("isTracking", false)
-            startTime = it.getLong("startTime", 0L)
-            totalDistance = it.getDouble("totalDistance", 0.0)
-            elevationGain = it.getDouble("elevationGain", 0.0)
-        }
+        // Initialize UI
+        initializeViews()
 
-        // load saved IDs from prefs (keeps defaults=1)
-        val prefs = getSharedPreferences(PREFS, MODE_PRIVATE)
-        raceId = prefs.getInt("race_id", 1)
-        runnerId = prefs.getInt("runner_id", 1)
-
-        tvDistance = findViewById(R.id.textDistance)
-        tvSpeed = findViewById(R.id.textSpeed)
-        tvPace = findViewById(R.id.textPace)
-        btnStart = findViewById(R.id.btnStart)
-        btnStop = findViewById(R.id.btnStop)
-
-        // show initial IDs in distance text
-        tvDistance.text = "🏁 0.00 km\nRace:${raceId} Runner:${runnerId}"
-
-        // allow editing ids by tapping distance text
-        tvDistance.setOnClickListener { showEditIdsDialog() }
-
-        // summary overlay bindings (optional)
-        summaryCard = findViewById(R.id.summaryCard)
-        textSummaryDistance = findViewById(R.id.textSummaryDistance)
-        textSummaryPace = findViewById(R.id.textSummaryPace)
-        textSummarySpeed = findViewById(R.id.textSummarySpeed)
-        textSummaryElevation = findViewById(R.id.textSummaryElevation)
-        textSummaryDuration = findViewById(R.id.textSummaryDuration)
-        btnShareSummary = findViewById(R.id.btnShareSummary)
-        btnShareSummary?.setOnClickListener {
-            takeActivityScreenshotAndSave { savedUri ->
-                if (savedUri != null) shareUri(savedUri)
-                else Toast.makeText(this, "Failed to create share image", Toast.LENGTH_SHORT).show()
-            }
-        }
-
-        // Small floating timer (we still keep textTimer view in xml but ensure it's updated too if present)
-        tvTimer = findViewByIdOrNull(R.id.textTimer) ?: TextView(this).apply {
-            text = "⏱ 00:00:00"
-            textSize = 16f
-            setPadding(20, 10, 20, 10)
-            setBackgroundColor(Color.parseColor("#99FFFFFF"))
-            setTextColor(Color.parseColor("#E94E1B"))
-            (findViewById<ViewGroup>(R.id.liveTrackerRoot)).addView(this, ViewGroup.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT))
-            val layoutParams = layoutParams as ViewGroup.MarginLayoutParams
-            layoutParams.topMargin = 50
-            this.layoutParams = layoutParams
-        }
-
-        // Map initialization
-        val mapFragment = supportFragmentManager.findFragmentById(R.id.mapView) as SupportMapFragment
+        // Initialize Map
+        val mapFragment = supportFragmentManager
+            .findFragmentById(R.id.map) as SupportMapFragment
         mapFragment.getMapAsync(this)
 
-        // Start/Stop buttons
-        btnStart.setOnClickListener {
-            if (hasLocationPermissions()) {
-                if (!isGpsEnabled()) promptEnableGps() else startTrackingService()
-            } else {
-                permissionLauncher.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION))
+        // Initialize Performance Modules
+        initializePerformanceModules()
+
+        // Register broadcast receiver
+        val filter = IntentFilter().apply {
+            addAction("LOCATION_UPDATE")
+            addAction("HEART_RATE_UPDATE")
+            addAction("CADENCE_UPDATE")
+        }
+        LocalBroadcastManager.getInstance(this).registerReceiver(locationReceiver, filter)
+
+        // Setup button listeners
+        setupButtonListeners()
+
+        // Check and request permissions
+        checkPermissions()
+    }
+
+    private fun initializeViews() {
+        distanceText = findViewById(R.id.distance_text)
+        paceText = findViewById(R.id.pace_text)
+        timeText = findViewById(R.id.time_text)
+        heartRateText = findViewById(R.id.heart_rate_text)
+        cadenceText = findViewById(R.id.cadence_text)
+        startButton = findViewById(R.id.start_button)
+        pauseButton = findViewById(R.id.pause_button)
+        stopButton = findViewById(R.id.stop_button)
+
+        // Initial button states
+        pauseButton.isEnabled = false
+        stopButton.isEnabled = false
+    }
+
+    private fun initializePerformanceModules() {
+        val sharedPrefs = getSharedPreferences("race_tracker_prefs", Context.MODE_PRIVATE)
+        val targetPace = sharedPrefs.getFloat("target_pace", 6.0f)
+        val targetDistance = sharedPrefs.getFloat("target_distance", 5.0f)
+        val hydrationInterval = sharedPrefs.getInt("hydration_interval", 20)
+
+        paceAlertManager = PaceAlertManager(this, targetPace)
+        hydrationReminder = HydrationReminder(this, hydrationInterval)
+        autoLapManager = AutoLapManager(this, 1.0) // 1 km auto-lap
+        bleHeartRateManager = BLEHeartRateManager(this)
+        bleSensorManager = BLERunningSensorManager(this)
+        cadenceDetector = CadenceDetector(this)
+        trainingLoad = TrainingLoad()
+        analyticsManager = AnalyticsManager(this)
+
+        // Setup BLE callbacks
+        bleHeartRateManager.setHeartRateCallback { heartRate ->
+            updateHeartRateUI(heartRate)
+        }
+
+        bleSensorManager.setCadenceCallback { cadence ->
+            cadenceDetector.recordStep()
+            updateCadenceUI(cadence)
+        }
+    }
+
+    private fun setupButtonListeners() {
+        startButton.setOnClickListener {
+            if (!isTracking) {
+                startTracking()
+            } else if (isPaused) {
+                resumeTracking()
             }
         }
 
-        btnStop.setOnClickListener {
-            stopTrackingService()
-            stopTimer()
-            showSummaryInOverlay()
+        pauseButton.setOnClickListener {
+            pauseTracking()
+        }
+
+        stopButton.setOnClickListener {
+            stopTracking()
         }
     }
 
-    override fun onStart() {
-        super.onStart()
-        registerReceiver(trackingReceiver, IntentFilter(ACTION_TRACKING_UPDATE))
-    }
+    private fun checkPermissions() {
+        val permissionsNeeded = mutableListOf<String>()
 
-    override fun onStop() {
-        try { unregisterReceiver(trackingReceiver) } catch (_: Throwable) {}
-        super.onStop()
-    }
+        // Location permissions
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+            != PackageManager.PERMISSION_GRANTED) {
+            permissionsNeeded.add(Manifest.permission.ACCESS_FINE_LOCATION)
+        }
 
-    override fun onSaveInstanceState(outState: Bundle) {
-        super.onSaveInstanceState(outState)
-        outState.putBoolean("isTracking", isTracking)
-        outState.putLong("startTime", startTime)
-        outState.putDouble("totalDistance", totalDistance)
-        outState.putDouble("elevationGain", elevationGain)
-    }
+        // Notification permission for Android 13+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
+                != PackageManager.PERMISSION_GRANTED) {
+                permissionsNeeded.add(Manifest.permission.POST_NOTIFICATIONS)
+            }
+        }
 
-    override fun onNewIntent(intent: Intent) {
-        super.onNewIntent(intent)
+        // Bluetooth permissions for Android 12+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT)
+                != PackageManager.PERMISSION_GRANTED) {
+                permissionsNeeded.add(Manifest.permission.BLUETOOTH_CONNECT)
+            }
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_SCAN)
+                != PackageManager.PERMISSION_GRANTED) {
+                permissionsNeeded.add(Manifest.permission.BLUETOOTH_SCAN)
+            }
+        }
 
-        // When the user taps the notification
-        // Activity is brought to front — restore UI safely
-        if (intent.action == "OPEN_TRACKING_SCREEN") {
-            // Optionally refresh UI / reload map
-            Log.d(TAG, "Activity brought to front via notification")
+        if (permissionsNeeded.isNotEmpty()) {
+            ActivityCompat.requestPermissions(this, permissionsNeeded.toTypedArray(), 100)
         }
     }
-
 
     override fun onMapReady(map: GoogleMap) {
         googleMap = map
-        googleMap?.uiSettings?.isZoomControlsEnabled = false
-        try {
-            googleMap?.setMapStyle(MapStyleOptions.loadRawResourceStyle(this, R.raw.strava_map_style))
-        } catch (e: Exception) {
-            Log.w(TAG, "Map style load failed: ${e.message}")
+        
+        // Enable location layer if permission granted
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+            == PackageManager.PERMISSION_GRANTED) {
+            googleMap.isMyLocationEnabled = true
+        }
+
+        // Configure map UI
+        googleMap.uiSettings.apply {
+            isZoomControlsEnabled = true
+            isCompassEnabled = true
+            isMyLocationButtonEnabled = true
         }
     }
 
-    private fun updateMarker(point: LatLng) {
-        val desc = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_ORANGE)
-        if (runnerMarker == null) {
-            runnerMarker = googleMap?.addMarker(MarkerOptions().position(point).icon(desc).title("You"))
-        } else {
-            runnerMarker?.position = point
-        }
-    }
+    private fun startTracking() {
+        // Start tracking service
+        val serviceIntent = Intent(this, TrackingService::class.java)
+        serviceIntent.action = "START"
+        ContextCompat.startForegroundService(this, serviceIntent)
+        
+        // Bind to service
+        bindService(serviceIntent, serviceConnection, Context.BIND_AUTO_CREATE)
 
-    private fun updatePolyline() {
-        if (googleMap == null) return
-        runOnUiThread {
-            val color = ContextCompat.getColor(this, R.color.strava_orange)
-            val opts = PolylineOptions().addAll(pathPoints).width(12f).color(color).jointType(JointType.ROUND)
-            if (polyline == null) polyline = googleMap?.addPolyline(opts) else polyline?.points = pathPoints
-        }
-    }
-
-    private fun computeElevationGain() {
-        if (elevations.size < 2) return
-        var gain = 0.0
-        for (i in 1 until elevations.size) {
-            val d = elevations[i] - elevations[i - 1]
-            if (d > 0.5) gain += d
-        }
-        elevationGain = gain
-    }
-
-    private fun startTrackingService() {
-        val intent = Intent(this, TrackingService::class.java)
-        // pass the current (possibly edited) IDs to the service
-        intent.putExtra("runner_id", runnerId)
-        intent.putExtra("race_id", raceId)
-        ContextCompat.startForegroundService(this, intent)
-        startTime = System.currentTimeMillis()
-        startTimer()
+        // Update state
         isTracking = true
+        isPaused = false
+        startTime = System.currentTimeMillis()
+        totalDistance = 0.0
+        lastValidLocation = null
+        totalPausedDuration = 0
 
-        // persist IDs
-        getSharedPreferences(PREFS, MODE_PRIVATE).edit().putInt("runner_id", runnerId).putInt("race_id", raceId).apply()
+        // Update UI
+        updateButtonStates()
+        uiUpdateHandler.post(uiUpdateRunnable)
 
-        Toast.makeText(this, "🏃 Tracking started (race=$raceId runner=$runnerId)", Toast.LENGTH_SHORT).show()
+        // Start performance modules - only when tracking starts
+        paceAlertManager.reset()
+        hydrationReminder.start()
+        autoLapManager.reset()
+        cadenceDetector.reset()
+        trainingLoad.reset()
+        
+        // Start BLE scanning
+        bleHeartRateManager.startScanning()
+        bleSensorManager.startScanning()
+
+        Toast.makeText(this, "Tracking started", Toast.LENGTH_SHORT).show()
     }
 
-    private fun stopTrackingService() {
-        stopService(Intent(this, TrackingService::class.java))
+    private fun pauseTracking() {
+        isPaused = true
+        pausedTime = System.currentTimeMillis()
+
+        // Pause service
+        trackingService?.pause()
+
+        // Pause performance modules
+        hydrationReminder.pause()
+
+        updateButtonStates()
+        Toast.makeText(this, "Tracking paused", Toast.LENGTH_SHORT).show()
+    }
+
+    private fun resumeTracking() {
+        val pauseDuration = System.currentTimeMillis() - pausedTime
+        totalPausedDuration += pauseDuration
+        isPaused = false
+
+        // Resume service
+        trackingService?.resume()
+
+        // Resume performance modules
+        hydrationReminder.resume()
+
+        updateButtonStates()
+        uiUpdateHandler.post(uiUpdateRunnable)
+        Toast.makeText(this, "Tracking resumed", Toast.LENGTH_SHORT).show()
+    }
+
+    private fun stopTracking() {
+        // Calculate final metrics
+        val endTime = System.currentTimeMillis()
+        val totalTimeMs = endTime - startTime - totalPausedDuration
+        val totalTimeSec = totalTimeMs / 1000
+        val avgPace = if (totalDistance > 0) (totalTimeSec / 60.0) / totalDistance else 0.0
+        val avgHeartRate = bleHeartRateManager.getAverageHeartRate()
+
+        // Stop service
+        val serviceIntent = Intent(this, TrackingService::class.java)
+        serviceIntent.action = "STOP"
+        startService(serviceIntent)
+        
+        if (isServiceBound) {
+            unbindService(serviceConnection)
+            isServiceBound = false
+        }
+
+        // Stop performance modules
+        hydrationReminder.stop()
+        bleHeartRateManager.stopScanning()
+        bleSensorManager.stopScanning()
+        paceAlertManager.reset()
+
+        // Save analytics data
+        saveRaceToAnalytics(
+            distance = totalDistance,
+            duration = totalTimeSec,
+            avgPace = avgPace,
+            avgHeartRate = avgHeartRate
+        )
+
+        // Reset state
         isTracking = false
-        
-        // Save race data to analytics database
-        saveRaceToAnalytics(raceId, runnerId, startTime, pathPoints, elevations, totalDistance)
-        
-        Toast.makeText(this, "⏹ Tracking stopped", Toast.LENGTH_SHORT).show()
+        isPaused = false
+        uiUpdateHandler.removeCallbacks(uiUpdateRunnable)
+
+        // Update UI
+        updateButtonStates()
+        Toast.makeText(this, "Tracking stopped - Race saved!", Toast.LENGTH_SHORT).show()
+
+        // Return to setup activity
+        finish()
     }
 
-    private fun startTimer() {
-        timerJob?.cancel()
-        timerJob = CoroutineScope(Dispatchers.Main).launch {
-            while (isActive) {
-                val elapsed = (System.currentTimeMillis() - startTime) / 1000
-                tvTimer.text = "⏱ " + formatTime(elapsed)
-                delay(1000)
+    private fun updateButtonStates() {
+        when {
+            !isTracking -> {
+                startButton.isEnabled = true
+                startButton.text = "START"
+                pauseButton.isEnabled = false
+                stopButton.isEnabled = false
+            }
+            isPaused -> {
+                startButton.isEnabled = true
+                startButton.text = "RESUME"
+                pauseButton.isEnabled = false
+                stopButton.isEnabled = true
+            }
+            else -> {
+                startButton.isEnabled = false
+                pauseButton.isEnabled = true
+                stopButton.isEnabled = true
             }
         }
     }
 
-    private fun stopTimer() {
-        timerJob?.cancel()
-    }
+    private fun updateUIFromService() {
+        trackingService?.let { service ->
+            // Update distance (use service's distance)
+            val distance = service.getTotalDistance()
+            totalDistance = distance
+            distanceText.text = String.format("%.2f km", distance)
 
-    private fun formatTime(seconds: Long): String {
-        val h = seconds / 3600
-        val m = (seconds % 3600) / 60
-        val s = seconds % 60
-        return String.format("%02d:%02d:%02d", h, m, s)
-    }
-
-    private fun showSummaryInOverlay() {
-        val elapsed = (System.currentTimeMillis() - startTime) / 1000
-        val avgSpeed = if (elapsed > 0) (totalDistance / (elapsed / 3600.0)) else 0.0
-        val avgPace = if (totalDistance > 0) (elapsed / 60.0) / totalDistance else 0.0
-
-        textSummaryDistance?.text = "Distance: %.2f km".format(totalDistance)
-        textSummaryPace?.text = "Pace: %.2f min/km".format(avgPace)
-        textSummarySpeed?.text = "Speed: %.2f km/h".format(avgSpeed)
-        textSummaryElevation?.text = "Elevation Gain: %.0f m".format(elevationGain)
-        textSummaryDuration?.text = "Duration: ${formatTime(elapsed)}"
-
-        summaryCard?.visibility = View.VISIBLE
-    }
-
-    // snapshot + save (unchanged)
-    private fun takeActivityScreenshotAndSave(callback: (Uri?) -> Unit) {
-        googleMap?.snapshot { mapBitmap ->
-            if (mapBitmap == null) { callback(null); return@snapshot }
-            val overlayHeight = 360
-            val combined = Bitmap.createBitmap(mapBitmap.width, mapBitmap.height + overlayHeight, Bitmap.Config.ARGB_8888)
-            val canvas = Canvas(combined)
-            canvas.drawBitmap(mapBitmap, 0f, 0f, null)
-
-            val paintBg = Paint().apply {
-                shader = LinearGradient(0f, mapBitmap.height.toFloat(), 0f, (mapBitmap.height + overlayHeight).toFloat(),
-                    Color.parseColor("#FF5722"), Color.parseColor("#FF8A50"), Shader.TileMode.CLAMP)
-            }
-            canvas.drawRect(0f, mapBitmap.height.toFloat(), mapBitmap.width.toFloat(), (mapBitmap.height + overlayHeight).toFloat(), paintBg)
-
-            val paintText = Paint().apply {
-                color = Color.WHITE
-                textSize = 42f
-                isAntiAlias = true
-                typeface = Typeface.create(Typeface.DEFAULT_BOLD, Typeface.BOLD)
-            }
-
-            val elapsed = (System.currentTimeMillis() - startTime) / 1000
-            val avgSpeed = if (elapsed > 0) (totalDistance / (elapsed / 3600.0)) else 0.0
-            val avgPace = if (totalDistance > 0) (elapsed / 60.0) / totalDistance else 0.0
-
-            var y = mapBitmap.height + 70f
-            val lines = listOf(
-                "🏁 Distance: %.2f km".format(totalDistance),
-                "⏱ Duration: ${formatTime(elapsed)}",
-                "⚡ Avg Speed: %.2f km/h".format(avgSpeed),
-                "🕒 Avg Pace: %.2f min/km".format(avgPace),
-                "🧗 Elevation: %.0f m".format(elevationGain)
-            )
-            for (line in lines) {
-                canvas.drawText(line, 48f, y, paintText)
-                y += 56f
-            }
-
-            CoroutineScope(Dispatchers.IO).launch {
-                val savedUri = saveBitmapToPublicPictures(combined)
-                withContext(Dispatchers.Main) { callback(savedUri) }
-            }
-        } ?: run { callback(null) }
-    }
-
-    private fun saveBitmapToPublicPictures(bitmap: Bitmap): Uri? {
-        return try {
-            val filename = "activity_${SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())}.jpg"
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                val values = ContentValues().apply {
-                    put(MediaStore.Images.Media.DISPLAY_NAME, filename)
-                    put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
-                    put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/RaceTracker")
-                    put(MediaStore.Images.Media.IS_PENDING, 1)
-                }
-                val resolver = contentResolver
-                val uri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
-                if (uri != null) {
-
-                    val outputStream = resolver.openOutputStream(uri)
-                    val out: OutputStream = outputStream ?: return null
-
-                    out.use { stream ->
-                        bitmap.compress(Bitmap.CompressFormat.JPEG, 95, stream)
-                    }
-
-                    values.clear()
-                    values.put(MediaStore.Images.Media.IS_PENDING, 0)
-                    resolver.update(uri, values, null, null)
-                    return uri
-                }
-                null
+            // Update time
+            val elapsedTime = if (isPaused) {
+                pausedTime - startTime - totalPausedDuration
             } else {
-                if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
-                    requestWritePermission.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE)
-                    return null
-                }
-                val picturesDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)
-                val targetDir = File(picturesDir, "RaceTracker")
-                if (!targetDir.exists()) targetDir.mkdirs()
-                val file = File(targetDir, filename)
-                FileOutputStream(file).use { fos -> bitmap.compress(Bitmap.CompressFormat.JPEG, 95, fos) }
-                MediaScannerConnection.scanFile(this, arrayOf(file.absolutePath), arrayOf("image/jpeg"), null)
-                Uri.fromFile(file)
+                System.currentTimeMillis() - startTime - totalPausedDuration
             }
-        } catch (e: Exception) {
-            Log.e(TAG, "saveBitmap failed: ${e.message}")
-            null
-        }
-    }
+            timeText.text = formatTime(elapsedTime)
 
-    private fun shareUri(uri: Uri) {
-        try {
-            val share = Intent(Intent.ACTION_SEND).apply {
-                putExtra(Intent.EXTRA_STREAM, uri)
-                type = "image/jpeg"
-                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            // Update pace
+            val pace = if (distance > 0) {
+                val timeInMinutes = elapsedTime / 60000.0
+                timeInMinutes / distance
+            } else {
+                0.0
             }
-            startActivity(Intent.createChooser(share, "Share activity"))
-        } catch (e: Exception) {
-            Log.e(TAG, "share failed: ${e.message}")
-            Toast.makeText(this, "Share failed: ${e.message}", Toast.LENGTH_LONG).show()
+            paceText.text = String.format("%.2f min/km", pace)
+
+            // Check pace alerts - only when tracking and not paused
+            if (isTracking && !isPaused && distance > 0) {
+                paceAlertManager.checkPace(pace, distance)
+            }
+
+            // Check hydration reminder
+            hydrationReminder.checkReminder(elapsedTime)
+
+            // Check auto-lap
+            autoLapManager.checkDistance(distance)
+
+            // Update training load
+            val currentHeartRate = bleHeartRateManager.getCurrentHeartRate()
+            if (currentHeartRate > 0) {
+                trainingLoad.update(currentHeartRate, 1.0) // Update every second
+            }
         }
     }
 
-    private fun hasLocationPermissions(): Boolean {
-        val fine = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
-        val coarse = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
-        return fine && coarse
-    }
-
-    private fun ensureGpsEnabledOrPrompt() {
-        if (!isGpsEnabled()) promptEnableGps()
-        else try { googleMap?.isMyLocationEnabled = true } catch (_: SecurityException) {}
-    }
-
-    private fun isGpsEnabled(): Boolean {
-        val lm = getSystemService(LOCATION_SERVICE) as LocationManager
-        return lm.isProviderEnabled(LocationManager.GPS_PROVIDER) || lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER)
-    }
-
-    private fun promptEnableGps() {
-        AlertDialog.Builder(this)
-            .setTitle("Enable GPS")
-            .setMessage("Please enable GPS for accurate tracking.")
-            .setPositiveButton("Open Settings") { _, _ ->
-                startActivity(Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS))
-            }.setNegativeButton("Cancel", null)
-            .show()
-    }
-
-    // show dialog so user can change IDs on-the-fly
-    private fun showEditIdsDialog() {
-        val ctx = this
-        val layout = LinearLayout(ctx).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding(30, 20, 30, 0)
-        }
-        val etRace = EditText(ctx).apply {
-            hint = "Race ID"
-            inputType = android.text.InputType.TYPE_CLASS_NUMBER
-            setText(raceId.toString())
-        }
-        val etRunner = EditText(ctx).apply {
-            hint = "Runner ID"
-            inputType = android.text.InputType.TYPE_CLASS_NUMBER
-            setText(runnerId.toString())
-        }
-        layout.addView(etRace)
-        layout.addView(etRunner)
-
-        AlertDialog.Builder(ctx)
-            .setTitle("Edit Race / Runner IDs")
-            .setView(layout)
-            .setPositiveButton("Save") { _, _ ->
-                val newRace = etRace.text.toString().toIntOrNull() ?: 1
-                val newRunner = etRunner.text.toString().toIntOrNull() ?: 1
-                val changed = (newRace != raceId) || (newRunner != runnerId)
-                raceId = newRace
-                runnerId = newRunner
-                // persist
-                getSharedPreferences(PREFS, MODE_PRIVATE).edit().putInt("race_id", raceId).putInt("runner_id", runnerId).apply()
-                // update visible text immediately
-                val lines = tvDistance.text.toString().split("\n")
-                val distLine = lines.getOrNull(0) ?: "🏁 0.00 km"
-                tvDistance.text = "$distLine\nRace:${raceId} Runner:${runnerId}"
-
-                if (changed && isTracking) {
-                    // restart service with new ids (stop then start)
-                    stopTrackingService()
-                    // small delay to let service stop then start again
-                    Handler(Looper.getMainLooper()).postDelayed({ startTrackingService() }, 400)
+    private fun updatePolyline(newLocation: LatLng) {
+        // Add point to polyline
+        val polylineOptions = PolylineOptions()
+            .add(newLocation)
+            .color(Color.BLUE)
+            .width(10f)
+        
+        trackingService?.getLocationPoints()?.let { points ->
+            if (points.isNotEmpty()) {
+                polylineOptions.addAll(points)
+                googleMap.clear()
+                googleMap.addPolyline(polylineOptions)
+                
+                // Update camera to show entire route
+                if (points.size > 1) {
+                    val boundsBuilder = LatLngBounds.Builder()
+                    points.forEach { boundsBuilder.include(it) }
+                    val bounds = boundsBuilder.build()
+                    googleMap.animateCamera(CameraUpdateFactory.newLatLngBounds(bounds, 100))
+                } else {
+                    googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(newLocation, 17f))
                 }
             }
-            .setNegativeButton("Cancel", null)
-            .show()
+        }
     }
 
-    // helper: returns view by id or null
-    private fun <T : View> findViewByIdOrNull(id: Int): T? {
-        return try { findViewById(id) } catch (_: Exception) { null }
+    private fun updateHeartRateUI(heartRate: Int) {
+        if (heartRate > 0) {
+            heartRateText.text = "$heartRate bpm"
+        } else {
+            heartRateText.text = "-- bpm"
+        }
+    }
+
+    private fun updateCadenceUI(cadence: Int) {
+        if (cadence > 0) {
+            cadenceText.text = "$cadence spm"
+        } else {
+            cadenceText.text = "-- spm"
+        }
+    }
+
+    private fun calculateDistance(start: LatLng, end: LatLng): Double {
+        val earthRadius = 6371000.0 // meters
+        val dLat = Math.toRadians(end.latitude - start.latitude)
+        val dLon = Math.toRadians(end.longitude - start.longitude)
+        val a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(Math.toRadians(start.latitude)) * 
+                Math.cos(Math.toRadians(end.latitude)) *
+                Math.sin(dLon / 2) * Math.sin(dLon / 2)
+        val c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+        return earthRadius * c / 1000.0 // Convert to kilometers
+    }
+
+    private fun formatTime(milliseconds: Long): String {
+        val seconds = (milliseconds / 1000) % 60
+        val minutes = (milliseconds / (1000 * 60)) % 60
+        val hours = (milliseconds / (1000 * 60 * 60))
+        return String.format("%02d:%02d:%02d", hours, minutes, seconds)
+    }
+
+    private fun saveRaceToAnalytics(
+        distance: Double,
+        duration: Long,
+        avgPace: Double,
+        avgHeartRate: Int
+    ) {
+        // Get split times from service
+        val splitTimes = trackingService?.getSplitTimes() ?: emptyList()
+
+        // Calculate calories (rough estimate: 1 kcal per kg per km)
+        val sharedPrefs = getSharedPreferences("race_tracker_prefs", Context.MODE_PRIVATE)
+        val weight = sharedPrefs.getFloat("user_weight", 70f)
+        val calories = (distance * weight).toInt()
+
+        // Create race data
+        val raceData = RaceData(
+            timestamp = System.currentTimeMillis(),
+            distance = distance,
+            duration = duration,
+            avgPace = avgPace,
+            avgHeartRate = avgHeartRate,
+            maxHeartRate = bleHeartRateManager.getMaxHeartRate(),
+            calories = calories,
+            splitTimes = splitTimes.joinToString(",") { String.format("%.2f", it) },
+            trainingLoad = trainingLoad.getLoad()
+        )
+
+        // Save to database asynchronously
+        Thread {
+            analyticsManager.saveRace(raceData)
+        }.start()
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        
+        // Cleanup
+        uiUpdateHandler.removeCallbacks(uiUpdateRunnable)
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(locationReceiver)
+        
+        if (isServiceBound) {
+            unbindService(serviceConnection)
+        }
+
+        // Stop performance modules
+        hydrationReminder.stop()
+        bleHeartRateManager.stopScanning()
+        bleSensorManager.stopScanning()
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        
+        if (requestCode == 100) {
+            val allGranted = grantResults.all { it == PackageManager.PERMISSION_GRANTED }
+            if (!allGranted) {
+                Toast.makeText(
+                    this,
+                    "Permissions required for full functionality",
+                    Toast.LENGTH_LONG
+                ).show()
+            }
+        }
     }
 }
