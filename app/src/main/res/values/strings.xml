@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">Race Tracker</string>
+    <string name="google_maps_key">AIzaSyDVtw3KA3RlD_296tmhZS0jFaxq5J5nooA</string>
+    <string name="openweather_api_key">166abd9d7856950c53c442b5e9ce7a18</string>
+</resources>

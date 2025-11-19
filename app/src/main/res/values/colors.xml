@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="strava_orange">#FC4C02</color>
+    <color name="strava_orange_dark">#C63C00</color>
+    <color name="strava_gray_bg">#F9F9F9</color>
+    <color name="strava_text_dark">#212121</color>
+    <color name="strava_text_light">#757575</color>
+    <color name="strava_accent_blue">#3A86FF</color>
+    <color name="card_bg">#FFFFFF</color>
+    <!-- 🌈 Full Material Theme Light Palette -->
+    <color name="md_theme_light_primary">#006A6A</color>
+    <color name="md_theme_light_onPrimary">#FFFFFF</color>
+    <color name="md_theme_light_surface">#FFFFFF</color>
+    <color name="md_theme_light_onSurface">#1C1B1F</color>
+    <color name="md_theme_light_background">#F7F9FA</color>
+    <color name="dark_gray">#333333</color>
+    <color name="background_light">#F7F7F7</color>
+    <color name="text_primary">#111111</color>
+    <color name="text_secondary">#666666</color>
+    <color name="white">#FFFFFF</color>
+    <!-- 🧱 App Custom Colors -->
+    <color name="surface_light">#FFFFFF</color>
+    <color name="teal_700">#00796B</color>
+    <color name="black">#000000</color>
+    <color name="purple_500">#6200EE</color>
+    <color name="purple_700">#3700B3</color>
+</resources>
