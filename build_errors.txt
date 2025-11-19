@@ -1,0 +1,258 @@
+> Task :app:compileDebugKotlin
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/AnalyticsActivity.kt:140:50 Unresolved reference: fastestRaceDate
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/AnalyticsActivity.kt:143:50 Unresolved reference: longestRaceDate
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/AnalyticsActivity.kt:145:72 Unresolved reference: mostElevationGain
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/AnalyticsActivity.kt:146:50 Unresolved reference: mostElevationRaceDate
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/AnalyticsActivity.kt:150:50 Unresolved reference: longestDurationRaceDate
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/AnalyticsActivity.kt:172:66 Unresolved reference: calories
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/AnalyticsActivity.kt:185:48 Type mismatch: inferred type is AnalyticsManager.WeeklySummary but PeriodSummary was expected
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/AnalyticsActivity.kt:198:49 Type mismatch: inferred type is AnalyticsManager.MonthlySummary but PeriodSummary was expected
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/AnalyticsActivity.kt:253:52 Unresolved reference: elevationDiff
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/AnalyticsActivity.kt:258:55 Unresolved reference: caloriesDiff
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/AnalyticsManager.kt:109:17 Cannot find a parameter with this name: date
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/AnalyticsManager.kt:110:17 Cannot find a parameter with this name: distance
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/AnalyticsManager.kt:112:17 Cannot find a parameter with this name: avgPace
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/AnalyticsManager.kt:113:17 Cannot find a parameter with this name: maxSpeed
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/AnalyticsManager.kt:114:17 Cannot find a parameter with this name: avgHeartRate
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/AnalyticsManager.kt:116:34 Type mismatch: inferred type is Int but Double was expected
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/AnalyticsManager.kt:117:17 Cannot find a parameter with this name: elevationGain
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/AnalyticsManager.kt:118:17 Cannot find a parameter with this name: splits
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/AnalyticsManager.kt:121:17 Cannot find a parameter with this name: polyline
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/AnalyticsManager.kt:121:17 No value passed for parameter 'raceId'
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/AnalyticsManager.kt:121:17 No value passed for parameter 'runnerId'
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/AnalyticsManager.kt:121:17 No value passed for parameter 'startTime'
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/AnalyticsManager.kt:121:17 No value passed for parameter 'endTime'
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/AnalyticsManager.kt:121:17 No value passed for parameter 'totalDistanceMeters'
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/AnalyticsManager.kt:121:17 No value passed for parameter 'averageSpeedKmh'
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/AnalyticsManager.kt:121:17 No value passed for parameter 'maxSpeedKmh'
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/AnalyticsManager.kt:121:17 No value passed for parameter 'averagePaceMinPerKm'
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/AnalyticsManager.kt:121:17 No value passed for parameter 'bestPaceMinPerKm'
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/AnalyticsManager.kt:121:17 No value passed for parameter 'elevationGainMeters'
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/AnalyticsManager.kt:121:17 No value passed for parameter 'elevationLossMeters'
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/AnalyticsManager.kt:121:17 No value passed for parameter 'maxElevationMeters'
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/AnalyticsManager.kt:121:17 No value passed for parameter 'minElevationMeters'
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/AnalyticsManager.kt:121:17 No value passed for parameter 'pathPoints'
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/AnalyticsManager.kt:121:17 No value passed for parameter 'elevations'
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/AnalyticsManager.kt:121:17 No value passed for parameter 'timestamps'
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/AnalyticsManager.kt:121:17 No value passed for parameter 'speeds'
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/AnalyticsManager.kt:121:17 No value passed for parameter 'splitTimes'
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/AnalyticsManager.kt:121:17 No value passed for parameter 'splitPaces'
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/AnalyticsManager.kt:163:53 Type mismatch: inferred type is Unit but Comparable<TypeVariable(R)> was expected
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/AnalyticsManager.kt:163:53 Type mismatch: inferred type is Unit but Comparable<Unit> was expected
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/AnalyticsManager.kt:163:58 Unresolved reference: distance
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/AnalyticsManager.kt:163:70 Unresolved reference: distance
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/AnalyticsManager.kt:164:44 Type mismatch: inferred type is Unit but Boolean was expected
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/AnalyticsManager.kt:164:49 Unresolved reference: avgPace
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/AnalyticsManager.kt:164:75 Type mismatch: inferred type is Unit but Comparable<TypeVariable(R)> was expected
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/AnalyticsManager.kt:164:75 Type mismatch: inferred type is Unit but Comparable<Unit> was expected
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/AnalyticsManager.kt:164:80 Unresolved reference: avgPace
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/AnalyticsManager.kt:164:91 Unresolved reference: avgPace
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/AnalyticsManager.kt:166:46 Type mismatch: inferred type is Unit but Comparable<TypeVariable(R)> was expected
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/AnalyticsManager.kt:166:46 Type mismatch: inferred type is Unit but Comparable<Unit> was expected
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/AnalyticsManager.kt:166:51 Unresolved reference: maxSpeed
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/AnalyticsManager.kt:166:63 Unresolved reference: maxSpeed
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/AnalyticsManager.kt:168:39 None of the following functions can be called with the arguments supplied: 
+public inline fun <T> Iterable<TypeVariable(T)>.sumOf(selector: (TypeVariable(T)) -> BigDecimal): BigDecimal defined in kotlin.collections
+public inline fun <T> Iterable<TypeVariable(T)>.sumOf(selector: (TypeVariable(T)) -> BigInteger): BigInteger defined in kotlin.collections
+public inline fun <T> Iterable<TypeVariable(T)>.sumOf(selector: (TypeVariable(T)) -> Double): Double defined in kotlin.collections
+public inline fun <T> Iterable<TypeVariable(T)>.sumOf(selector: (TypeVariable(T)) -> Int): Int defined in kotlin.collections
+public inline fun <T> Iterable<TypeVariable(T)>.sumOf(selector: (TypeVariable(T)) -> Long): Long defined in kotlin.collections
+public inline fun <T> Iterable<TypeVariable(T)>.sumOf(selector: (TypeVariable(T)) -> UInt): UInt defined in kotlin.collections
+public inline fun <T> Iterable<TypeVariable(T)>.sumOf(selector: (TypeVariable(T)) -> ULong): ULong defined in kotlin.collections
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/AnalyticsManager.kt:168:50 Unresolved reference: distance
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/AnalyticsManager.kt:182:44 Unresolved reference: avgPace
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/AnalyticsManager.kt:182:62 Unresolved reference: distance
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/AnalyticsManager.kt:186:40 None of the following functions can be called with the arguments supplied: 
+public inline fun <T> Iterable<TypeVariable(T)>.sumOf(selector: (TypeVariable(T)) -> BigDecimal): BigDecimal defined in kotlin.collections
+public inline fun <T> Iterable<TypeVariable(T)>.sumOf(selector: (TypeVariable(T)) -> BigInteger): BigInteger defined in kotlin.collections
+public inline fun <T> Iterable<TypeVariable(T)>.sumOf(selector: (TypeVariable(T)) -> Double): Double defined in kotlin.collections
+public inline fun <T> Iterable<TypeVariable(T)>.sumOf(selector: (TypeVariable(T)) -> Int): Int defined in kotlin.collections
+public inline fun <T> Iterable<TypeVariable(T)>.sumOf(selector: (TypeVariable(T)) -> Long): Long defined in kotlin.collections
+public inline fun <T> Iterable<TypeVariable(T)>.sumOf(selector: (TypeVariable(T)) -> UInt): UInt defined in kotlin.collections
+public inline fun <T> Iterable<TypeVariable(T)>.sumOf(selector: (TypeVariable(T)) -> ULong): ULong defined in kotlin.collections
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/AnalyticsManager.kt:186:51 Unresolved reference: distance
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/AnalyticsManager.kt:201:32 Unresolved reference: getRacesAfterDate
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/AnalyticsManager.kt:217:39 None of the following functions can be called with the arguments supplied: 
+public inline fun <T> Iterable<TypeVariable(T)>.sumOf(selector: (TypeVariable(T)) -> BigDecimal): BigDecimal defined in kotlin.collections
+public inline fun <T> Iterable<TypeVariable(T)>.sumOf(selector: (TypeVariable(T)) -> BigInteger): BigInteger defined in kotlin.collections
+public inline fun <T> Iterable<TypeVariable(T)>.sumOf(selector: (TypeVariable(T)) -> Double): Double defined in kotlin.collections
+public inline fun <T> Iterable<TypeVariable(T)>.sumOf(selector: (TypeVariable(T)) -> Int): Int defined in kotlin.collections
+public inline fun <T> Iterable<TypeVariable(T)>.sumOf(selector: (TypeVariable(T)) -> Long): Long defined in kotlin.collections
+public inline fun <T> Iterable<TypeVariable(T)>.sumOf(selector: (TypeVariable(T)) -> UInt): UInt defined in kotlin.collections
+public inline fun <T> Iterable<TypeVariable(T)>.sumOf(selector: (TypeVariable(T)) -> ULong): ULong defined in kotlin.collections
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/AnalyticsManager.kt:217:50 Unresolved reference: distance
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/AnalyticsManager.kt:220:33 Type mismatch: inferred type is Double but Int was expected
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/AnalyticsManager.kt:237:39 None of the following functions can be called with the arguments supplied: 
+public inline fun <T> Iterable<TypeVariable(T)>.sumOf(selector: (TypeVariable(T)) -> BigDecimal): BigDecimal defined in kotlin.collections
+public inline fun <T> Iterable<TypeVariable(T)>.sumOf(selector: (TypeVariable(T)) -> BigInteger): BigInteger defined in kotlin.collections
+public inline fun <T> Iterable<TypeVariable(T)>.sumOf(selector: (TypeVariable(T)) -> Double): Double defined in kotlin.collections
+public inline fun <T> Iterable<TypeVariable(T)>.sumOf(selector: (TypeVariable(T)) -> Int): Int defined in kotlin.collections
+public inline fun <T> Iterable<TypeVariable(T)>.sumOf(selector: (TypeVariable(T)) -> Long): Long defined in kotlin.collections
+public inline fun <T> Iterable<TypeVariable(T)>.sumOf(selector: (TypeVariable(T)) -> UInt): UInt defined in kotlin.collections
+public inline fun <T> Iterable<TypeVariable(T)>.sumOf(selector: (TypeVariable(T)) -> ULong): ULong defined in kotlin.collections
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/AnalyticsManager.kt:237:50 Unresolved reference: distance
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/AnalyticsManager.kt:240:33 Type mismatch: inferred type is Double but Int was expected
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/AnalyticsManager.kt:241:44 None of the following functions can be called with the arguments supplied: 
+public inline fun <T> Iterable<TypeVariable(T)>.sumOf(selector: (TypeVariable(T)) -> BigDecimal): BigDecimal defined in kotlin.collections
+public inline fun <T> Iterable<TypeVariable(T)>.sumOf(selector: (TypeVariable(T)) -> BigInteger): BigInteger defined in kotlin.collections
+public inline fun <T> Iterable<TypeVariable(T)>.sumOf(selector: (TypeVariable(T)) -> Double): Double defined in kotlin.collections
+public inline fun <T> Iterable<TypeVariable(T)>.sumOf(selector: (TypeVariable(T)) -> Int): Int defined in kotlin.collections
+public inline fun <T> Iterable<TypeVariable(T)>.sumOf(selector: (TypeVariable(T)) -> Long): Long defined in kotlin.collections
+public inline fun <T> Iterable<TypeVariable(T)>.sumOf(selector: (TypeVariable(T)) -> UInt): UInt defined in kotlin.collections
+public inline fun <T> Iterable<TypeVariable(T)>.sumOf(selector: (TypeVariable(T)) -> ULong): ULong defined in kotlin.collections
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/AnalyticsManager.kt:241:55 Unresolved reference: elevationGain
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/AnalyticsManager.kt:261:42 Unresolved reference: distance
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/AnalyticsManager.kt:261:59 Unresolved reference: distance
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/AnalyticsManager.kt:263:38 Unresolved reference: avgPace
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/AnalyticsManager.kt:263:54 Unresolved reference: avgPace
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/AnalyticsManager.kt:264:39 Unresolved reference: maxSpeed
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/AnalyticsManager.kt:264:56 Unresolved reference: maxSpeed
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/AnalyticsManager.kt:283:25 Type mismatch: inferred type is Unit but Long was expected
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/AnalyticsManager.kt:283:40 Unresolved reference: date
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/AnalyticsManager.kt:284:29 Type mismatch: inferred type is Unit but Double was expected
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/AnalyticsManager.kt:284:44 Unresolved reference: distance
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/AnalyticsManager.kt:285:25 Type mismatch: inferred type is Unit but Double was expected
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/AnalyticsManager.kt:285:40 Unresolved reference: avgPace
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/LiveTrackerActivity.kt:85:53 Unresolved reference: LocalBinder
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/LiveTrackerActivity.kt:91:29 Unresolved reference: isTracking
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/LiveTrackerActivity.kt:93:40 Unresolved reference: isPaused
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/LiveTrackerActivity.kt:94:41 Unresolved reference: startTime
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/LiveTrackerActivity.kt:95:51 Unresolved reference: totalPausedDuration
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/LiveTrackerActivity.kt:172:42 Unresolved reference: distance_text
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/LiveTrackerActivity.kt:173:38 Unresolved reference: pace_text
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/LiveTrackerActivity.kt:174:38 Unresolved reference: time_text
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/LiveTrackerActivity.kt:175:43 Unresolved reference: heart_rate_text
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/LiveTrackerActivity.kt:176:41 Unresolved reference: cadence_text
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/LiveTrackerActivity.kt:177:41 Unresolved reference: start_button
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/LiveTrackerActivity.kt:178:41 Unresolved reference: pause_button
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/LiveTrackerActivity.kt:179:40 Unresolved reference: stop_button
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/LiveTrackerActivity.kt:195:51 No value passed for parameter 'onHeartRate'
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/LiveTrackerActivity.kt:196:52 Type mismatch: inferred type is LiveTrackerActivity but (Double, Double, Double?, Double?) -> Unit was expected
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/LiveTrackerActivity.kt:197:43 No value passed for parameter 'onCadence'
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/LiveTrackerActivity.kt:202:29 Unresolved reference: setHeartRateCallback
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/LiveTrackerActivity.kt:202:52 Cannot infer a type for this parameter. Please specify it explicitly.
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/LiveTrackerActivity.kt:206:26 Unresolved reference: setCadenceCallback
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/LiveTrackerActivity.kt:206:47 Cannot infer a type for this parameter. Please specify it explicitly.
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/LiveTrackerActivity.kt:207:29 Unresolved reference: recordStep
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/LiveTrackerActivity.kt:306:25 Unresolved reference: reset
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/LiveTrackerActivity.kt:307:22 Unresolved reference: reset
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/LiveTrackerActivity.kt:310:29 Unresolved reference: startScanning
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/LiveTrackerActivity.kt:311:26 Unresolved reference: startScanning
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/LiveTrackerActivity.kt:321:26 Unresolved reference: pause
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/LiveTrackerActivity.kt:336:26 Unresolved reference: resume
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/LiveTrackerActivity.kt:352:48 Unresolved reference: getAverageHeartRate
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/LiveTrackerActivity.kt:366:29 Unresolved reference: stopScanning
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/LiveTrackerActivity.kt:367:26 Unresolved reference: stopScanning
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/LiveTrackerActivity.kt:416:36 Unresolved reference: getTotalDistance
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/LiveTrackerActivity.kt:431:31 Overload resolution ambiguity: 
+public final operator fun div(other: Byte): Double defined in kotlin.Double
+public final operator fun div(other: Double): Double defined in kotlin.Double
+public final operator fun div(other: Float): Double defined in kotlin.Double
+public final operator fun div(other: Int): Double defined in kotlin.Double
+public final operator fun div(other: Long): Double defined in kotlin.Double
+public final operator fun div(other: Short): Double defined in kotlin.Double
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/LiveTrackerActivity.kt:449:56 Unresolved reference: getCurrentHeartRate
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/LiveTrackerActivity.kt:451:30 Unresolved reference: update
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/LiveTrackerActivity.kt:463:26 Unresolved reference: getLocationPoints
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/LiveTrackerActivity.kt:463:53 Cannot infer a type for this parameter. Please specify it explicitly.
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/LiveTrackerActivity.kt:472:28 Overload resolution ambiguity: 
+public inline fun <T> Iterable<TypeVariable(T)>.forEach(action: (TypeVariable(T)) -> Unit): Unit defined in kotlin.collections
+public inline fun <K, V> Map<out TypeVariable(K), TypeVariable(V)>.forEach(action: (Map.Entry<TypeVariable(K), TypeVariable(V)>) -> Unit): Unit defined in kotlin.collections
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/LiveTrackerActivity.kt:472:60 Unresolved reference: it
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/LiveTrackerActivity.kt:524:43 Unresolved reference: getSplitTimes
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/LiveTrackerActivity.kt:524:62 Not enough information to infer type variable T
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/LiveTrackerActivity.kt:533:13 Cannot find a parameter with this name: timestamp
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/LiveTrackerActivity.kt:534:13 Cannot find a parameter with this name: distance
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/LiveTrackerActivity.kt:536:13 Cannot find a parameter with this name: avgPace
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/LiveTrackerActivity.kt:537:13 Cannot find a parameter with this name: avgHeartRate
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/LiveTrackerActivity.kt:538:48 Unresolved reference: getMaxHeartRate
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/LiveTrackerActivity.kt:539:13 Cannot find a parameter with this name: calories
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/LiveTrackerActivity.kt:540:79 Unresolved reference: it
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/LiveTrackerActivity.kt:541:13 Cannot find a parameter with this name: trainingLoad
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/LiveTrackerActivity.kt:541:13 No value passed for parameter 'raceId'
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/LiveTrackerActivity.kt:541:13 No value passed for parameter 'runnerId'
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/LiveTrackerActivity.kt:541:13 No value passed for parameter 'startTime'
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/LiveTrackerActivity.kt:541:13 No value passed for parameter 'endTime'
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/LiveTrackerActivity.kt:541:13 No value passed for parameter 'totalDistanceMeters'
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/LiveTrackerActivity.kt:541:13 No value passed for parameter 'averageSpeedKmh'
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/LiveTrackerActivity.kt:541:13 No value passed for parameter 'maxSpeedKmh'
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/LiveTrackerActivity.kt:541:13 No value passed for parameter 'averagePaceMinPerKm'
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/LiveTrackerActivity.kt:541:13 No value passed for parameter 'bestPaceMinPerKm'
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/LiveTrackerActivity.kt:541:13 No value passed for parameter 'elevationGainMeters'
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/LiveTrackerActivity.kt:541:13 No value passed for parameter 'elevationLossMeters'
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/LiveTrackerActivity.kt:541:13 No value passed for parameter 'maxElevationMeters'
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/LiveTrackerActivity.kt:541:13 No value passed for parameter 'minElevationMeters'
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/LiveTrackerActivity.kt:541:13 No value passed for parameter 'caloriesBurned'
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/LiveTrackerActivity.kt:541:13 No value passed for parameter 'pathPoints'
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/LiveTrackerActivity.kt:541:13 No value passed for parameter 'elevations'
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/LiveTrackerActivity.kt:541:13 No value passed for parameter 'timestamps'
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/LiveTrackerActivity.kt:541:13 No value passed for parameter 'speeds'
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/LiveTrackerActivity.kt:541:13 No value passed for parameter 'splitPaces'
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/LiveTrackerActivity.kt:541:41 Unresolved reference: getLoad
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/LiveTrackerActivity.kt:546:30 Suspend function 'saveRace' should be called only from a coroutine or another suspend function
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/LiveTrackerActivity.kt:546:39 Type mismatch: inferred type is RaceData but Double was expected
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/LiveTrackerActivity.kt:546:39 No value passed for parameter 'duration'
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/LiveTrackerActivity.kt:546:39 No value passed for parameter 'avgPace'
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/LiveTrackerActivity.kt:546:39 No value passed for parameter 'maxSpeed'
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/LiveTrackerActivity.kt:546:39 No value passed for parameter 'avgHeartRate'
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/LiveTrackerActivity.kt:546:39 No value passed for parameter 'maxHeartRate'
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/LiveTrackerActivity.kt:546:39 No value passed for parameter 'caloriesBurned'
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/LiveTrackerActivity.kt:546:39 No value passed for parameter 'elevationGain'
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/LiveTrackerActivity.kt:546:39 No value passed for parameter 'polylinePoints'
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/LiveTrackerActivity.kt:563:29 Unresolved reference: stopScanning
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/LiveTrackerActivity.kt:564:26 Unresolved reference: stopScanning
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/LiveTrackerActivityExtension.kt:33:12 Cannot access 'analyticsManager': it is private in 'LiveTrackerActivity'
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/LiveTrackerActivityExtension.kt:33:29 Backing field of 'var analyticsManager: AnalyticsManager' is not accessible at this point
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/LiveTrackerActivityExtension.kt:42:17 Cannot find a parameter with this name: date
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/LiveTrackerActivityExtension.kt:43:17 Cannot find a parameter with this name: distance
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/LiveTrackerActivityExtension.kt:45:17 Cannot find a parameter with this name: avgPace
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/LiveTrackerActivityExtension.kt:46:17 Cannot find a parameter with this name: maxSpeed
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/LiveTrackerActivityExtension.kt:47:17 Cannot find a parameter with this name: avgHeartRate
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/LiveTrackerActivityExtension.kt:49:34 Type mismatch: inferred type is Int but Double was expected
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/LiveTrackerActivityExtension.kt:50:17 Cannot find a parameter with this name: elevationGain
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/LiveTrackerActivityExtension.kt:51:17 Cannot find a parameter with this name: splits
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/LiveTrackerActivityExtension.kt:52:17 Cannot find a parameter with this name: polyline
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/LiveTrackerActivityExtension.kt:52:17 No value passed for parameter 'raceId'
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/LiveTrackerActivityExtension.kt:52:17 No value passed for parameter 'runnerId'
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/LiveTrackerActivityExtension.kt:52:17 No value passed for parameter 'startTime'
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/LiveTrackerActivityExtension.kt:52:17 No value passed for parameter 'endTime'
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/LiveTrackerActivityExtension.kt:52:17 No value passed for parameter 'totalDistanceMeters'
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/LiveTrackerActivityExtension.kt:52:17 No value passed for parameter 'averageSpeedKmh'
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/LiveTrackerActivityExtension.kt:52:17 No value passed for parameter 'maxSpeedKmh'
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/LiveTrackerActivityExtension.kt:52:17 No value passed for parameter 'averagePaceMinPerKm'
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/LiveTrackerActivityExtension.kt:52:17 No value passed for parameter 'bestPaceMinPerKm'
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/LiveTrackerActivityExtension.kt:52:17 No value passed for parameter 'elevationGainMeters'
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/LiveTrackerActivityExtension.kt:52:17 No value passed for parameter 'elevationLossMeters'
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/LiveTrackerActivityExtension.kt:52:17 No value passed for parameter 'maxElevationMeters'
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/LiveTrackerActivityExtension.kt:52:17 No value passed for parameter 'minElevationMeters'
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/LiveTrackerActivityExtension.kt:52:17 No value passed for parameter 'pathPoints'
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/LiveTrackerActivityExtension.kt:52:17 No value passed for parameter 'elevations'
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/LiveTrackerActivityExtension.kt:52:17 No value passed for parameter 'timestamps'
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/LiveTrackerActivityExtension.kt:52:17 No value passed for parameter 'speeds'
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/LiveTrackerActivityExtension.kt:52:17 No value passed for parameter 'splitTimes'
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/LiveTrackerActivityExtension.kt:52:17 No value passed for parameter 'splitPaces'
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/LiveTrackerActivityExtension.kt:55:26 Cannot access 'analyticsManager': it is private in 'LiveTrackerActivity'
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/SetupActivity.kt:16:35 Unresolved reference: R
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/SetupActivity.kt:17:35 Unresolved reference: analytics
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/SetupActivity.kt:18:35 Unresolved reference: location
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/SetupActivity.kt:19:35 Unresolved reference: network
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/SetupActivity.kt:25:34 Unresolved reference: LocationHandler
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/SetupActivity.kt:25:53 Property delegate must have a 'getValue(SetupActivity, KProperty<*>)' method. None of the following functions is suitable: 
+public inline operator fun <T> Lazy<Unit>.getValue(thisRef: Any?, property: KProperty<*>): Unit defined in kotlin
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/SetupActivity.kt:25:60 Unresolved reference: LocationHandler
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/SetupActivity.kt:32:24 Unresolved reference: R
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/SetupActivity.kt:34:40 Unresolved reference: R
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/SetupActivity.kt:35:36 Unresolved reference: R
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/SetupActivity.kt:36:36 Unresolved reference: R
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/SetupActivity.kt:44:28 Unresolved reference: R
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/SetupActivity.kt:45:54 Unresolved reference: LiveTrackerActivity
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/SetupActivity.kt:48:28 Unresolved reference: R
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/SetupActivity.kt:49:54 Unresolved reference: AnalyticsActivity
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/SetupActivity.kt:88:39 Cannot infer a type for this parameter. Please specify it explicitly.
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/SetupActivity.kt:97:40 Unresolved reference: WeatherService
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/SetupActivity.kt:111:66 Unresolved reference: R
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/SetupActivity.kt:113:66 Unresolved reference: R
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/SetupActivity.kt:115:66 Unresolved reference: R
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/SetupActivity.kt:117:66 Unresolved reference: R
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/SetupActivity.kt:119:66 Unresolved reference: R
+e: file:///C:/RaceTrackerNative/app/src/main/java/com/racetracker/app/SplashActivity.kt:57:74 Unresolved reference: SetupActivity
