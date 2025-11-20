@@ -68,6 +68,16 @@ class HydrationReminder(
         isPaused = false
     }
 
+    // ADDED: reset() method to clear all state
+    fun reset() {
+        lastReminderTime = 0
+        startTime = 0
+        pausedTime = 0
+        totalPausedDuration = 0
+        isRunning = false
+        isPaused = false
+    }
+
     fun checkReminder(elapsedTime: Long) {
         if (!isRunning || isPaused) return
 

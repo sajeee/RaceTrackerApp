@@ -24,9 +24,39 @@ class CadenceDetector(
     fun start() {
         sensorManager.registerListener(this, accel, SensorManager.SENSOR_DELAY_GAME)
     }
+    
     fun stop() {
         sensorManager.unregisterListener(this)
         peaks.clear()
+    }
+
+    // ADDED: reset() method to clear data and restart
+    fun reset() {
+        peaks.clear()
+        lastPeak = 0L
+    }
+
+    // ADDED: Alternative method to record a step (for BLE sensor integration)
+    fun recordStep() {
+        val now = System.currentTimeMillis()
+        if (now - lastPeak > 250) { // avoid double counting
+            peaks.add(now)
+            lastPeak = now
+            
+            // Purge old peaks
+            val cutoff = now - windowMillis
+            while (peaks.isNotEmpty() && peaks[0] < cutoff) peaks.removeAt(0)
+            
+            // Calculate cadence if we have enough data
+            if (peaks.size >= 2) {
+                val durationSec = (peaks.last() - peaks.first()).toDouble() / 1000.0
+                if (durationSec > 0) {
+                    val steps = peaks.size.toDouble()
+                    val spm = (steps / durationSec) * 60.0
+                    onCadence(spm)
+                }
+            }
+        }
     }
 
     override fun onSensorChanged(event: SensorEvent?) {

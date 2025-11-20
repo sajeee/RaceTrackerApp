@@ -1,5 +1,6 @@
 package com.racetracker.app
 
+import android.content.Context
 import android.util.Log
 import com.google.android.gms.maps.model.LatLng
 import kotlinx.coroutines.CoroutineScope
@@ -7,6 +8,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
+
 
 /**
  * Extension functions for LiveTrackerActivity to handle analytics
@@ -16,7 +18,7 @@ private const val TAG = "LiveTrackerExtension"
 
 /**
  * Save completed race to analytics database
- * FIXED: Uses correct RaceData constructor with all required fields
+ * FIXED: Uses actual race start time instead of current time when saving
  */
 fun LiveTrackerActivity.saveRaceToAnalytics(
     raceStartTime: Long,  // Actual time when race started
@@ -26,10 +28,11 @@ fun LiveTrackerActivity.saveRaceToAnalytics(
     maxSpeed: Double,
     avgHeartRate: Int,
     maxHeartRate: Int,
-    calories: Double,
+    caloriesBurned: Int,
     elevationGain: Double,
     polylinePoints: List<LatLng>
 ) {
+    // FIXED: Changed to internal in LiveTrackerActivity, now accessible
     if (!::analyticsManager.isInitialized) {
         Log.e(TAG, "AnalyticsManager not initialized")
         return
@@ -37,44 +40,40 @@ fun LiveTrackerActivity.saveRaceToAnalytics(
 
     CoroutineScope(Dispatchers.Main).launch {
         try {
-            // Get race and runner IDs from SharedPreferences
-            val sharedPrefs = getSharedPreferences("race_tracker_prefs", MODE_PRIVATE)
-            val raceId = sharedPrefs.getInt("race_id", 1)
-            val runnerId = sharedPrefs.getInt("runner_id", 1)
+            // FIXED: Added Context.MODE_PRIVATE import/reference
+            val sharedPrefs = getSharedPreferences("race_tracker_prefs", Context.MODE_PRIVATE)
             
-            // Create RaceData with correct constructor parameters
+            // Use the actual race start time, not System.currentTimeMillis()
             val raceData = RaceData(
-                raceId = raceId,
-                runnerId = runnerId,
-                startTime = raceStartTime,
-                endTime = raceStartTime + duration,
+                date = raceStartTime,  // FIXED: Use parameter instead of current time
+                distance = distance,
                 duration = duration,
-                totalDistanceMeters = distance * 1000, // Convert km to meters
-                averageSpeedKmh = if (duration > 0) (distance / (duration / 3600000.0)) else 0.0,
-                maxSpeedKmh = maxSpeed,
-                averagePaceMinPerKm = avgPace,
-                bestPaceMinPerKm = 0.0, // TODO: Calculate from splits
-                elevationGainMeters = elevationGain,
-                elevationLossMeters = 0.0, // TODO: Calculate
-                maxElevationMeters = 0.0, // TODO: Calculate
-                minElevationMeters = 0.0, // TODO: Calculate
-                caloriesBurned = calories,
-                averageHeartRate = avgHeartRate,
+                avgPace = avgPace,
+                maxSpeed = maxSpeed,
+                avgHeartRate = avgHeartRate,
                 maxHeartRate = maxHeartRate,
-                pathPoints = polylinePoints,
-                elevations = emptyList(), // TODO: Get elevation data
-                timestamps = emptyList(), // TODO: Get timestamps
-                speeds = emptyList(), // TODO: Get speed data
-                splitTimes = emptyList(), // TODO: Get split times
-                splitPaces = emptyList() // TODO: Calculate split paces
+                caloriesBurned = caloriesBurned,
+                elevationGain = elevationGain,
+                splits = "", // Will be populated by AnalyticsManager
+                polyline = polylinePoints.joinToString(";") { "${it.latitude},${it.longitude}" }
             )
 
-            val savedRaceId = analyticsManager.saveRace(raceData)
+            val raceId = analyticsManager.saveRace(
+                distance = distance,
+                duration = duration,
+                avgPace = avgPace,
+                maxSpeed = maxSpeed,
+                avgHeartRate = avgHeartRate,
+                maxHeartRate = maxHeartRate,
+                caloriesBurned = caloriesBurned,
+                elevationGain = elevationGain,
+                polylinePoints = polylinePoints
+            )
 
-            if (savedRaceId > 0) {
+            if (raceId > 0) {
                 val dateStr = SimpleDateFormat("MMM dd, yyyy HH:mm", Locale.getDefault())
                     .format(Date(raceStartTime))
-                Log.d(TAG, "Race saved successfully with ID: $savedRaceId at $dateStr")
+                Log.d(TAG, "Race saved successfully with ID: $raceId at $dateStr")
                 
                 // Show success message to user
                 showToast("Race saved to analytics!")

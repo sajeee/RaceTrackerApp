@@ -15,14 +15,14 @@
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_alignParentTop="true"
-        android:layout_above="@+id/statsCard"
+        android:layout_above="@+id/healthMetricsCard"
         android:layout_centerHorizontal="true"
         android:layout_weight="1"
         android:layout_marginBottom="10dp" />
 
     <!-- ⏱️ TIMER DISPLAY ON TOP CENTER -->
     <TextView
-        android:id="@+id/textTimer"
+        android:id="@+id/time_text"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="00:00:00"
@@ -35,7 +35,82 @@
         android:padding="8dp"
         android:elevation="12dp" />
 
-    <!-- 📊 STATS CARD (BOTTOM) -->
+    <!-- 💓 HEALTH METRICS CARD (Heart Rate & Cadence) -->
+    <LinearLayout
+        android:id="@+id/healthMetricsCard"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="12dp"
+        android:gravity="center"
+        android:background="@drawable/bg_card_blur"
+        android:layout_above="@id/statsCard"
+        android:elevation="10dp"
+        android:layout_margin="10dp"
+        android:layout_marginBottom="4dp">
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="❤️ Heart Rate"
+                android:textSize="12sp"
+                android:textColor="@color/strava_text_dark"
+                android:alpha="0.7" />
+
+            <TextView
+                android:id="@+id/heart_rate_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="-- bpm"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:textColor="@color/strava_orange_dark"
+                android:layout_marginTop="4dp" />
+        </LinearLayout>
+
+        <View
+            android:layout_width="1dp"
+            android:layout_height="match_parent"
+            android:background="@color/strava_text_dark"
+            android:alpha="0.2"
+            android:layout_marginStart="8dp"
+            android:layout_marginEnd="8dp" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="🏃 Cadence"
+                android:textSize="12sp"
+                android:textColor="@color/strava_text_dark"
+                android:alpha="0.7" />
+
+            <TextView
+                android:id="@+id/cadence_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="-- spm"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:textColor="@color/strava_orange_dark"
+                android:layout_marginTop="4dp" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- 📊 STATS CARD (Distance, Speed, Pace) -->
     <LinearLayout
         android:id="@+id/statsCard"
         android:layout_width="match_parent"
@@ -44,154 +119,246 @@
         android:padding="14dp"
         android:gravity="center"
         android:background="@drawable/bg_card_blur"
-        android:layout_alignParentBottom="true"
+        android:layout_above="@id/buttonRow"
         android:elevation="10dp"
-        android:layout_margin="10dp">
+        android:layout_margin="10dp"
+        android:layout_marginBottom="4dp">
 
-        <TextView
-            android:id="@+id/textDistance"
+        <LinearLayout
             android:layout_width="0dp"
             android:layout_weight="1"
             android:layout_height="wrap_content"
-            android:text="🏁 0.00 km"
-            android:textSize="16sp"
-            android:textColor="@color/strava_text_dark"
-            android:gravity="center" />
+            android:orientation="vertical"
+            android:gravity="center">
 
-        <TextView
-            android:id="@+id/textSpeed"
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="🏁 Distance"
+                android:textSize="11sp"
+                android:textColor="@color/strava_text_dark"
+                android:alpha="0.7" />
+
+            <TextView
+                android:id="@+id/distance_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="0.00 km"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="@color/strava_text_dark"
+                android:layout_marginTop="2dp" />
+        </LinearLayout>
+
+        <LinearLayout
             android:layout_width="0dp"
             android:layout_weight="1"
             android:layout_height="wrap_content"
-            android:text="⚡ 0.00 km/h"
-            android:textSize="16sp"
-            android:textColor="@color/strava_text_dark"
-            android:gravity="center" />
+            android:orientation="vertical"
+            android:gravity="center">
 
-        <TextView
-            android:id="@+id/textPace"
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="⚡ Speed"
+                android:textSize="11sp"
+                android:textColor="@color/strava_text_dark"
+                android:alpha="0.7" />
+
+            <TextView
+                android:id="@+id/textSpeed"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="0.00 km/h"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="@color/strava_text_dark"
+                android:layout_marginTop="2dp" />
+        </LinearLayout>
+
+        <LinearLayout
             android:layout_width="0dp"
             android:layout_weight="1"
             android:layout_height="wrap_content"
-            android:text="⏱ 0:00"
-            android:textSize="16sp"
-            android:textColor="@color/strava_text_dark"
-            android:gravity="center" />
+            android:orientation="vertical"
+            android:gravity="center">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="⏱ Pace"
+                android:textSize="11sp"
+                android:textColor="@color/strava_text_dark"
+                android:alpha="0.7" />
+
+            <TextView
+                android:id="@+id/pace_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="0:00 /km"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="@color/strava_text_dark"
+                android:layout_marginTop="2dp" />
+        </LinearLayout>
     </LinearLayout>
 
-    <!-- 🟢 START / STOP BUTTONS ABOVE STATS -->
+    <!-- 🟢 START / PAUSE / STOP BUTTONS -->
     <LinearLayout
         android:id="@+id/buttonRow"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center"
-        android:layout_above="@id/statsCard"
-        android:layout_marginBottom="8dp">
+        android:layout_alignParentBottom="true"
+        android:layout_marginBottom="12dp"
+        android:padding="8dp">
 
         <Button
-            android:id="@+id/btnStart"
+            android:id="@+id/start_button"
             android:text="▶ Start"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="56dp"
             android:textColor="@color/white"
-            android:backgroundTint="@color/strava_orange"
-            android:padding="12dp"
-            android:layout_marginEnd="12dp" />
-
-        <Button
-            android:id="@+id/btnStop"
-            android:text="⏹ Stop"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textColor="@color/white"
-            android:backgroundTint="@color/strava_orange_dark"
-            android:padding="12dp" />
-    </LinearLayout>
-<!-- 📸 SUMMARY OVERLAY -->
-<LinearLayout
-    android:id="@+id/summaryCard"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:gravity="center"
-    android:padding="24dp"
-    android:background="#B3000000"
-    android:visibility="gone">
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="20dp"
-        android:background="@drawable/bg_card_blur"
-        android:elevation="10dp">
-
-        <TextView
-            android:id="@+id/textSummaryTitle"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="🏆 Activity Summary"
-            android:textSize="20sp"
+            android:textSize="16sp"
             android:textStyle="bold"
-            android:textColor="@color/strava_orange_dark"
-            android:layout_gravity="center_horizontal"
-            android:layout_marginBottom="10dp" />
-
-        <TextView
-            android:id="@+id/textSummaryDistance"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Distance: 0.00 km"
-            android:textSize="16sp"
-            android:textColor="@color/strava_text_dark"
-            android:layout_marginTop="4dp" />
-
-        <TextView
-            android:id="@+id/textSummaryPace"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Pace: 0 min/km"
-            android:textSize="16sp"
-            android:textColor="@color/strava_text_dark"
-            android:layout_marginTop="4dp" />
-
-        <TextView
-            android:id="@+id/textSummarySpeed"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Speed: 0 km/h"
-            android:textSize="16sp"
-            android:textColor="@color/strava_text_dark"
-            android:layout_marginTop="4dp" />
-
-        <TextView
-            android:id="@+id/textSummaryElevation"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Elevation Gain: 0 m"
-            android:textSize="16sp"
-            android:textColor="@color/strava_text_dark"
-            android:layout_marginTop="4dp" />
-
-        <TextView
-            android:id="@+id/textSummaryDuration"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Duration: 00:00:00"
-            android:textSize="16sp"
-            android:textColor="@color/strava_text_dark"
-            android:layout_marginTop="4dp" />
+            android:backgroundTint="@color/strava_orange"
+            android:layout_marginEnd="6dp"
+            android:elevation="8dp" />
 
         <Button
-            android:id="@+id/btnShareSummary"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="📤 Share"
-            android:layout_gravity="center_horizontal"
-            android:layout_marginTop="14dp"
+            android:id="@+id/pause_button"
+            android:text="⏸ Pause"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="56dp"
             android:textColor="@color/white"
-            android:backgroundTint="@color/strava_orange" />
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:backgroundTint="@color/strava_orange_dark"
+            android:layout_marginEnd="6dp"
+            android:elevation="8dp"
+            android:enabled="false"
+            android:alpha="0.6" />
+
+        <Button
+            android:id="@+id/stop_button"
+            android:text="⏹ Stop"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="56dp"
+            android:textColor="@color/white"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:backgroundTint="#D32F2F"
+            android:elevation="8dp"
+            android:enabled="false"
+            android:alpha="0.6" />
     </LinearLayout>
-</LinearLayout>
+
+    <!-- 📸 SUMMARY OVERLAY -->
+    <LinearLayout
+        android:id="@+id/summaryCard"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:padding="24dp"
+        android:background="#B3000000"
+        android:visibility="gone">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="20dp"
+            android:background="@drawable/bg_card_blur"
+            android:elevation="10dp">
+
+            <TextView
+                android:id="@+id/textSummaryTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="🏆 Activity Summary"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                android:textColor="@color/strava_orange_dark"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginBottom="10dp" />
+
+            <TextView
+                android:id="@+id/textSummaryDistance"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Distance: 0.00 km"
+                android:textSize="16sp"
+                android:textColor="@color/strava_text_dark"
+                android:layout_marginTop="4dp" />
+
+            <TextView
+                android:id="@+id/textSummaryPace"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Pace: 0 min/km"
+                android:textSize="16sp"
+                android:textColor="@color/strava_text_dark"
+                android:layout_marginTop="4dp" />
+
+            <TextView
+                android:id="@+id/textSummarySpeed"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Speed: 0 km/h"
+                android:textSize="16sp"
+                android:textColor="@color/strava_text_dark"
+                android:layout_marginTop="4dp" />
+
+            <TextView
+                android:id="@+id/textSummaryElevation"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Elevation Gain: 0 m"
+                android:textSize="16sp"
+                android:textColor="@color/strava_text_dark"
+                android:layout_marginTop="4dp" />
+
+            <TextView
+                android:id="@+id/textSummaryDuration"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Duration: 00:00:00"
+                android:textSize="16sp"
+                android:textColor="@color/strava_text_dark"
+                android:layout_marginTop="4dp" />
+
+            <TextView
+                android:id="@+id/textSummaryHeartRate"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Avg Heart Rate: -- bpm"
+                android:textSize="16sp"
+                android:textColor="@color/strava_text_dark"
+                android:layout_marginTop="4dp" />
+
+            <TextView
+                android:id="@+id/textSummaryCadence"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Avg Cadence: -- spm"
+                android:textSize="16sp"
+                android:textColor="@color/strava_text_dark"
+                android:layout_marginTop="4dp" />
+
+            <Button
+                android:id="@+id/btnShareSummary"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="📤 Share"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="14dp"
+                android:textColor="@color/white"
+                android:backgroundTint="@color/strava_orange" />
+        </LinearLayout>
+    </LinearLayout>
 </RelativeLayout>

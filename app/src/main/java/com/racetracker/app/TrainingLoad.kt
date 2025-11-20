@@ -10,11 +10,17 @@ import kotlin.math.roundToInt
  */
 class TrainingLoad {
     private val samples = ArrayList<Double>() // power watts samples (1 Hz recommended)
+    
     fun addPowerSample(watts: Double) {
         samples.add(watts)
         if (samples.size > 36000) { // keep last 10 hours at 1Hz
             samples.removeAt(0)
         }
+    }
+
+    // ADDED: reset() method to clear all samples
+    fun reset() {
+        samples.clear()
     }
 
     fun normalizedPower(windowSeconds: Int = 30): Double {
