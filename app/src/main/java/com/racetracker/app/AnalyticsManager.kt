@@ -8,7 +8,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlin.math.*
 
-class AnalyticsManager(private val context: Context) {
+ class AnalyticsManager(private val context: Context) {
 
     private val TAG = "AnalyticsManager"
     private val database: RaceDatabase by lazy {

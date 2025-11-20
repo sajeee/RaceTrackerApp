@@ -9,13 +9,10 @@ import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
 
-
 /**
  * Extension functions for LiveTrackerActivity to handle analytics
  */
-
 private const val TAG = "LiveTrackerExtension"
-
 /**
  * Save completed race to analytics database
  * FIXED: Creates complete RaceData object with all 23 required parameters
@@ -33,7 +30,9 @@ fun LiveTrackerActivity.saveRaceToAnalytics(
     polylinePoints: List<LatLng>
 ) {
     // FIXED: Changed to internal in LiveTrackerActivity, now accessible
-    if (!::analyticsManager.isInitialized) {
+    try {
+        analyticsManager
+    } catch (e: UninitializedPropertyAccessException) {
         Log.e(TAG, "AnalyticsManager not initialized")
         return
     }

@@ -34,7 +34,7 @@ import java.util.*
 class LiveTrackerActivity : AppCompatActivity(), OnMapReadyCallback {
 
     private lateinit var googleMap: GoogleMap
-    private var trackingService: TrackingService? = null
+   internal var trackingService: TrackingService? = null
     private var isServiceBound = false
 
     // UI Elements
