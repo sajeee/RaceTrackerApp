@@ -1,52 +1,70 @@
-package com.hyperether.racetracker.ui
+package com.racetracker.app
 
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
-import android.view.View
-import android.widget.ImageView
-import android.widget.ProgressBar
+import android.widget.Button
+import android.widget.EditText
 import android.widget.TextView
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
-import com.hyperether.racetracker.R
-import com.hyperether.racetracker.analytics.AnalyticsActivity
-import com.hyperether.racetracker.location.LocationHandler
-import com.hyperether.racetracker.network.WeatherService
+import com.google.android.material.button.MaterialButton
+import com.google.android.material.textfield.TextInputEditText
 import kotlinx.coroutines.launch
 
 class SetupActivity : AppCompatActivity() {
 
     private val PERMISSION_REQUEST_CODE = 100
     private val locationHandler: LocationHandler by lazy { LocationHandler(this) }
-    private lateinit var weatherTextView: TextView
-    private lateinit var progressBar: ProgressBar
-    private lateinit var weatherIcon: ImageView
+    
+    private lateinit var etRaceId: TextInputEditText
+    private lateinit var etRunnerId: TextInputEditText
+    private lateinit var btnStart: MaterialButton
+    private lateinit var btnAnalytics: MaterialButton
+    private lateinit var tvStatus: TextView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_setup)
 
-        weatherTextView = findViewById(R.id.weatherTextView)
-        progressBar = findViewById(R.id.progressBar)
-        weatherIcon = findViewById(R.id.weatherIcon)
+        // Initialize views
+        etRaceId = findViewById(R.id.etRaceId)
+        etRunnerId = findViewById(R.id.etRunnerId)
+        btnStart = findViewById(R.id.btnStart)
+        btnAnalytics = findViewById(R.id.btnAnalytics)
+        tvStatus = findViewById(R.id.tvStatus)
 
+        // Setup button listeners
+        btnStart.setOnClickListener {
+            val raceId = etRaceId.text.toString().toIntOrNull() ?: 1
+            val runnerId = etRunnerId.text.toString().toIntOrNull() ?: 1
+            
+            // Save to SharedPreferences
+            val sharedPrefs = getSharedPreferences("race_tracker_prefs", MODE_PRIVATE)
+            sharedPrefs.edit().apply {
+                putInt("race_id", raceId)
+                putInt("runner_id", runnerId)
+                apply()
+            }
+            
+            // Start LiveTrackerActivity
+            val intent = Intent(this, LiveTrackerActivity::class.java)
+            startActivity(intent)
+        }
+
+        btnAnalytics.setOnClickListener {
+            val intent = Intent(this, AnalyticsActivity::class.java)
+            startActivity(intent)
+        }
+
+        // Check permissions
         if (!hasLocationPermission()) {
             requestLocationPermission()
         } else {
             fetchWeather()
-        }
-
-        findViewById<View>(R.id.startButton).setOnClickListener {
-            startActivity(Intent(this@SetupActivity, LiveTrackerActivity::class.java))
-        }
-
-        findViewById<View>(R.id.analyticsButton).setOnClickListener {
-            startActivity(Intent(this@SetupActivity, AnalyticsActivity::class.java))
         }
     }
 
@@ -75,69 +93,31 @@ class SetupActivity : AppCompatActivity() {
             if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 fetchWeather()
             } else {
-                weatherTextView.text = "Location permission denied"
+                tvStatus.text = "Location permission denied"
             }
         }
     }
 
     private fun fetchWeather() {
-        progressBar.visibility = View.VISIBLE
-        weatherTextView.visibility = View.GONE
-        weatherIcon.visibility = View.GONE
-
-        locationHandler.getLocation { loc ->
-            if (loc != null) {
-                val lat = loc.latitude
-                val lon = loc.longitude
-                val apiKey = "ae1a03ab9625235fc8cb76418d77c0b5"
-
-                // Use lifecycleScope to call the suspend function
+        locationHandler.getLastKnownLocation { location ->
+            location?.let {
                 lifecycleScope.launch {
                     try {
-                        val response = WeatherService.api.current(lat, lon, apiKey, "metric")
-                        
-                        runOnUiThread {
-                            progressBar.visibility = View.GONE
-                            weatherTextView.visibility = View.VISIBLE
-                            weatherIcon.visibility = View.VISIBLE
-
-                            val temp = response.main.temp
-                            val description = response.weather.firstOrNull()?.description ?: "N/A"
-                            weatherTextView.text = "${temp}°C, $description"
-
-                            // Set weather icon based on description
-                            when {
-                                description.contains("clear", ignoreCase = true) ->
-                                    weatherIcon.setImageResource(R.drawable.ic_sunny)
-                                description.contains("cloud", ignoreCase = true) ->
-                                    weatherIcon.setImageResource(R.drawable.ic_cloudy)
-                                description.contains("rain", ignoreCase = true) ->
-                                    weatherIcon.setImageResource(R.drawable.ic_rainy)
-                                description.contains("snow", ignoreCase = true) ->
-                                    weatherIcon.setImageResource(R.drawable.ic_snowy)
-                                else ->
-                                    weatherIcon.setImageResource(R.drawable.ic_sunny)
-                            }
-                        }
+                        val response = WeatherService.api.current(
+                            lat = it.latitude,
+                            lon = it.longitude,
+                            apiKey = "YOUR_OPENWEATHER_API_KEY", // Get free key from openweathermap.org
+                            units = "metric"
+                        )
+                        val temp = response.main.temp
+                        val condition = response.weather.firstOrNull()?.description ?: "Unknown"
+                        tvStatus.text = "Weather: %.1f°C, %s".format(temp, condition)
                     } catch (e: Exception) {
-                        runOnUiThread {
-                            progressBar.visibility = View.GONE
-                            weatherTextView.visibility = View.VISIBLE
-                            weatherTextView.text = "Error: ${e.message}"
-                            Toast.makeText(
-                                this@SetupActivity,
-                                "Weather fetch failed: ${e.message}",
-                                Toast.LENGTH_SHORT
-                            ).show()
-                        }
+                        tvStatus.text = "Weather data unavailable"
                     }
                 }
-            } else {
-                runOnUiThread {
-                    progressBar.visibility = View.GONE
-                    weatherTextView.visibility = View.VISIBLE
-                    weatherTextView.text = "Unable to get location"
-                }
+            } ?: run {
+                tvStatus.text = "Location unavailable"
             }
         }
     }

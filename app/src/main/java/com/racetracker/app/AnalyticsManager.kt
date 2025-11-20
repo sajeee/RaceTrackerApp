@@ -36,10 +36,6 @@ class AnalyticsManager(private val context: Context) {
      * Process location updates and detect split completions
      */
     fun processLocationUpdate(latLng: LatLng, elapsedTimeMs: Long): SplitData? {
-        // Calculate distance for this segment
-        // In actual implementation, this should accumulate from polyline points
-        // For now, this is a placeholder that should be called with cumulative distance
-        
         return checkForNewSplit(totalDistanceMeters, elapsedTimeMs)
     }
 
@@ -93,36 +89,10 @@ class AnalyticsManager(private val context: Context) {
     /**
      * Save completed race to database
      */
-    suspend fun saveRace(
-        distance: Double,
-        duration: Long,
-        avgPace: Double,
-        maxSpeed: Double,
-        avgHeartRate: Int,
-        maxHeartRate: Int,
-        caloriesBurned: Int,
-        elevationGain: Double,
-        polylinePoints: List<LatLng>
-    ): Long = withContext(Dispatchers.IO) {
+    suspend fun saveRace(raceData: RaceData): Long = withContext(Dispatchers.IO) {
         try {
-            val raceData = RaceData(
-                date = System.currentTimeMillis(),
-                distance = distance,
-                duration = duration,
-                avgPace = avgPace,
-                maxSpeed = maxSpeed,
-                avgHeartRate = avgHeartRate,
-                maxHeartRate = maxHeartRate,
-                caloriesBurned = caloriesBurned,
-                elevationGain = elevationGain,
-                splits = splitsList.map { 
-                    "${it.splitNumber}:${it.distance}:${it.time}:${it.pace}" 
-                }.joinToString(";"),
-                polyline = polylinePoints.joinToString(";") { "${it.latitude},${it.longitude}" }
-            )
-
             val id = database.raceDao().insertRace(raceData)
-            Log.d(TAG, "Race saved successfully with ID: $id, splits: ${splitsList.size}")
+            Log.d(TAG, "Race saved successfully with ID: $id")
             
             // Reset splits for next race
             splitsList.clear()
@@ -156,39 +126,69 @@ class AnalyticsManager(private val context: Context) {
             val races = database.raceDao().getAllRaces()
             
             if (races.isEmpty()) {
-                return@withContext PersonalRecords()
+                return@withContext PersonalRecords(
+                    fastestPace = 0.0,
+                    fastestRaceId = 0,
+                    fastestRaceDate = 0,
+                    longestDistance = 0.0,
+                    longestRaceId = 0,
+                    longestRaceDate = 0,
+                    mostElevationGain = 0.0,
+                    mostElevationRaceId = 0,
+                    mostElevationRaceDate = 0,
+                    longestDuration = 0,
+                    longestDurationRaceId = 0,
+                    longestDurationRaceDate = 0
+                )
             }
 
+            val fastestPaceRace = races.filter { it.averagePaceMinPerKm > 0 }.minByOrNull { it.averagePaceMinPerKm }
+            val longestDistanceRace = races.maxByOrNull { it.totalDistanceMeters }
+            val mostElevationRace = races.maxByOrNull { it.elevationGainMeters }
+            val longestDurationRace = races.maxByOrNull { it.duration }
+
             PersonalRecords(
-                longestDistance = races.maxByOrNull { it.distance }?.distance ?: 0.0,
-                fastestPace = races.filter { it.avgPace > 0 }.minByOrNull { it.avgPace }?.avgPace ?: 0.0,
-                longestDuration = races.maxByOrNull { it.duration }?.duration ?: 0L,
-                maxSpeed = races.maxByOrNull { it.maxSpeed }?.maxSpeed ?: 0.0,
-                totalRaces = races.size,
-                totalDistance = races.sumOf { it.distance },
-                totalDuration = races.sumOf { it.duration },
-                avgPaceAllTime = calculateOverallAvgPace(races)
+                fastestPace = fastestPaceRace?.averagePaceMinPerKm ?: 0.0,
+                fastestRaceId = fastestPaceRace?.id ?: 0,
+                fastestRaceDate = fastestPaceRace?.startTime ?: 0,
+                longestDistance = longestDistanceRace?.totalDistanceMeters ?: 0.0,
+                longestRaceId = longestDistanceRace?.id ?: 0,
+                longestRaceDate = longestDistanceRace?.startTime ?: 0,
+                mostElevationGain = mostElevationRace?.elevationGainMeters ?: 0.0,
+                mostElevationRaceId = mostElevationRace?.id ?: 0,
+                mostElevationRaceDate = mostElevationRace?.startTime ?: 0,
+                longestDuration = longestDurationRace?.duration ?: 0,
+                longestDurationRaceId = longestDurationRace?.id ?: 0,
+                longestDurationRaceDate = longestDurationRace?.startTime ?: 0
             )
         } catch (e: Exception) {
             Log.e(TAG, "Error calculating personal records", e)
-            PersonalRecords()
+            PersonalRecords(
+                fastestPace = 0.0,
+                fastestRaceId = 0,
+                fastestRaceDate = 0,
+                longestDistance = 0.0,
+                longestRaceId = 0,
+                longestRaceDate = 0,
+                mostElevationGain = 0.0,
+                mostElevationRaceId = 0,
+                mostElevationRaceDate = 0,
+                longestDuration = 0,
+                longestDurationRaceId = 0,
+                longestDurationRaceDate = 0
+            )
         }
     }
 
     /**
-     * Calculate overall average pace across all races
+     * Get races from specific time period
      */
-    private fun calculateOverallAvgPace(races: List<RaceData>): Double {
-        val validRaces = races.filter { it.avgPace > 0 && it.distance > 0 }
-        if (validRaces.isEmpty()) return 0.0
-
-        val totalTime = validRaces.sumOf { it.duration }
-        val totalDistance = validRaces.sumOf { it.distance }
-
-        return if (totalDistance > 0) {
-            (totalTime / 60000.0) / (totalDistance / 1000.0) // min/km
-        } else {
-            0.0
+    suspend fun getRacesAfterDate(startTime: Long): List<RaceData> = withContext(Dispatchers.IO) {
+        try {
+            database.raceDao().getRacesByTimeRange(startTime, System.currentTimeMillis())
+        } catch (e: Exception) {
+            Log.e(TAG, "Error fetching races after date", e)
+            emptyList()
         }
     }
 
@@ -198,7 +198,7 @@ class AnalyticsManager(private val context: Context) {
     suspend fun getRecentRaces(days: Int): List<RaceData> = withContext(Dispatchers.IO) {
         try {
             val cutoffTime = System.currentTimeMillis() - (days * 24 * 60 * 60 * 1000L)
-            database.raceDao().getRacesAfterDate(cutoffTime)
+            getRacesAfterDate(cutoffTime)
         } catch (e: Exception) {
             Log.e(TAG, "Error fetching recent races", e)
             emptyList()
@@ -208,41 +208,80 @@ class AnalyticsManager(private val context: Context) {
     /**
      * Calculate weekly summary
      */
-    suspend fun getWeeklySummary(): WeeklySummary = withContext(Dispatchers.IO) {
+    suspend fun getWeeklySummary(): PeriodSummary = withContext(Dispatchers.IO) {
         try {
             val races = getRecentRaces(7)
+            val now = System.currentTimeMillis()
+            val weekStart = now - (7 * 24 * 60 * 60 * 1000L)
             
-            WeeklySummary(
-                totalRuns = races.size,
-                totalDistance = races.sumOf { it.distance },
+            PeriodSummary(
+                periodStart = weekStart,
+                periodEnd = now,
+                totalRaces = races.size,
+                totalDistance = races.sumOf { it.totalDistanceMeters } / 1000.0, // Convert to km
                 totalDuration = races.sumOf { it.duration },
-                avgPace = calculateOverallAvgPace(races),
-                totalCalories = races.sumOf { it.caloriesBurned }
+                totalElevationGain = races.sumOf { it.elevationGainMeters },
+                totalCalories = races.sumOf { it.caloriesBurned },
+                averagePace = if (races.isNotEmpty()) races.map { it.averagePaceMinPerKm }.average() else 0.0,
+                averageSpeed = if (races.isNotEmpty()) races.map { it.averageSpeedKmh }.average() else 0.0,
+                bestPace = races.filter { it.averagePaceMinPerKm > 0 }.minOfOrNull { it.averagePaceMinPerKm } ?: 0.0,
+                longestRun = races.maxOfOrNull { it.totalDistanceMeters / 1000.0 } ?: 0.0
             )
         } catch (e: Exception) {
             Log.e(TAG, "Error calculating weekly summary", e)
-            WeeklySummary()
+            PeriodSummary(
+                periodStart = 0,
+                periodEnd = 0,
+                totalRaces = 0,
+                totalDistance = 0.0,
+                totalDuration = 0,
+                totalElevationGain = 0.0,
+                totalCalories = 0.0,
+                averagePace = 0.0,
+                averageSpeed = 0.0,
+                bestPace = 0.0,
+                longestRun = 0.0
+            )
         }
     }
 
     /**
      * Calculate monthly summary
      */
-    suspend fun getMonthlySummary(): MonthlySummary = withContext(Dispatchers.IO) {
+    suspend fun getMonthlySummary(): PeriodSummary = withContext(Dispatchers.IO) {
         try {
             val races = getRecentRaces(30)
+            val now = System.currentTimeMillis()
+            val monthStart = now - (30 * 24 * 60 * 60 * 1000L)
             
-            MonthlySummary(
-                totalRuns = races.size,
-                totalDistance = races.sumOf { it.distance },
+            PeriodSummary(
+                periodStart = monthStart,
+                periodEnd = now,
+                totalRaces = races.size,
+                totalDistance = races.sumOf { it.totalDistanceMeters } / 1000.0,
                 totalDuration = races.sumOf { it.duration },
-                avgPace = calculateOverallAvgPace(races),
+                totalElevationGain = races.sumOf { it.elevationGainMeters },
                 totalCalories = races.sumOf { it.caloriesBurned },
-                totalElevationGain = races.sumOf { it.elevationGain }
+                averagePace = if (races.isNotEmpty()) races.map { it.averagePaceMinPerKm }.average() else 0.0,
+                averageSpeed = if (races.isNotEmpty()) races.map { it.averageSpeedKmh }.average() else 0.0,
+                bestPace = races.filter { it.averagePaceMinPerKm > 0 }.minOfOrNull { it.averagePaceMinPerKm } ?: 0.0,
+                longestRun = races.maxOfOrNull { it.totalDistanceMeters / 1000.0 } ?: 0.0
             )
         } catch (e: Exception) {
             Log.e(TAG, "Error calculating monthly summary", e)
-            MonthlySummary()
+            PeriodSummary(
+                periodStart = 0,
+                periodEnd = 0,
+                totalRaces = 0,
+                totalDistance = 0.0,
+                totalDuration = 0,
+                totalElevationGain = 0.0,
+                totalCalories = 0.0,
+                averagePace = 0.0,
+                averageSpeed = 0.0,
+                bestPace = 0.0,
+                longestRun = 0.0
+            )
         }
     }
 
@@ -258,10 +297,11 @@ class AnalyticsManager(private val context: Context) {
                 RaceComparison(
                     race1 = race1,
                     race2 = race2,
-                    distanceDiff = race1.distance - race2.distance,
+                    distanceDiff = (race1.totalDistanceMeters - race2.totalDistanceMeters) / 1000.0,
+                    paceDiff = race1.averagePaceMinPerKm - race2.averagePaceMinPerKm,
                     durationDiff = race1.duration - race2.duration,
-                    paceDiff = race1.avgPace - race2.avgPace,
-                    speedDiff = race1.maxSpeed - race2.maxSpeed
+                    elevationDiff = race1.elevationGainMeters - race2.elevationGainMeters,
+                    caloriesDiff = race1.caloriesBurned - race2.caloriesBurned
                 )
             } else {
                 null
@@ -280,14 +320,23 @@ class AnalyticsManager(private val context: Context) {
             val races = getRecentRaces(days)
             
             PerformanceTrend(
-                dates = races.map { it.date },
-                distances = races.map { it.distance },
-                paces = races.map { it.avgPace },
-                durations = races.map { it.duration }
+                dates = races.map { it.startTime },
+                distances = races.map { it.totalDistanceMeters / 1000.0 },
+                paces = races.map { it.averagePaceMinPerKm },
+                speeds = races.map { it.averageSpeedKmh },
+                elevations = races.map { it.elevationGainMeters },
+                calories = races.map { it.caloriesBurned }
             )
         } catch (e: Exception) {
             Log.e(TAG, "Error getting performance trend", e)
-            PerformanceTrend()
+            PerformanceTrend(
+                dates = emptyList(),
+                distances = emptyList(),
+                paces = emptyList(),
+                speeds = emptyList(),
+                elevations = emptyList(),
+                calories = emptyList()
+            )
         }
     }
 
@@ -324,49 +373,4 @@ class AnalyticsManager(private val context: Context) {
      * Get current splits (for display during active race)
      */
     fun getCurrentSplits(): List<SplitData> = splitsList.toList()
-
-    // Data classes for analytics results
-    data class PersonalRecords(
-        val longestDistance: Double = 0.0,
-        val fastestPace: Double = 0.0,
-        val longestDuration: Long = 0L,
-        val maxSpeed: Double = 0.0,
-        val totalRaces: Int = 0,
-        val totalDistance: Double = 0.0,
-        val totalDuration: Long = 0L,
-        val avgPaceAllTime: Double = 0.0
-    )
-
-    data class WeeklySummary(
-        val totalRuns: Int = 0,
-        val totalDistance: Double = 0.0,
-        val totalDuration: Long = 0L,
-        val avgPace: Double = 0.0,
-        val totalCalories: Int = 0
-    )
-
-    data class MonthlySummary(
-        val totalRuns: Int = 0,
-        val totalDistance: Double = 0.0,
-        val totalDuration: Long = 0L,
-        val avgPace: Double = 0.0,
-        val totalCalories: Int = 0,
-        val totalElevationGain: Double = 0.0
-    )
-
-    data class RaceComparison(
-        val race1: RaceData,
-        val race2: RaceData,
-        val distanceDiff: Double,
-        val durationDiff: Long,
-        val paceDiff: Double,
-        val speedDiff: Double
-    )
-
-    data class PerformanceTrend(
-        val dates: List<Long> = emptyList(),
-        val distances: List<Double> = emptyList(),
-        val paces: List<Double> = emptyList(),
-        val durations: List<Long> = emptyList()
-    )
 }

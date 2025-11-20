@@ -20,6 +20,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.lifecycleScope
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
@@ -28,6 +29,7 @@ import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.LatLngBounds
 import com.google.android.gms.maps.model.PolylineOptions
+import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -41,10 +43,7 @@ class LiveTrackerActivity : AppCompatActivity(), OnMapReadyCallback {
     private lateinit var distanceText: TextView
     private lateinit var paceText: TextView
     private lateinit var timeText: TextView
-    private lateinit var heartRateText: TextView
-    private lateinit var cadenceText: TextView
     private lateinit var startButton: Button
-    private lateinit var pauseButton: Button
     private lateinit var stopButton: Button
 
     // Tracking state
@@ -62,7 +61,7 @@ class LiveTrackerActivity : AppCompatActivity(), OnMapReadyCallback {
     private lateinit var bleSensorManager: BLERunningSensorManager
     private lateinit var cadenceDetector: CadenceDetector
     private lateinit var trainingLoad: TrainingLoad
-    private lateinit var analyticsManager: AnalyticsManager
+    internal lateinit var analyticsManager: AnalyticsManager
 
     // Distance tracking
     private var totalDistance = 0.0
@@ -87,12 +86,12 @@ class LiveTrackerActivity : AppCompatActivity(), OnMapReadyCallback {
             isServiceBound = true
             
             // Restore state if service was already tracking
-            trackingService?.let { service ->
-                if (service.isTracking) {
+            trackingService?.let { svc ->
+                if (svc.isTracking) {
                     isTracking = true
-                    isPaused = service.isPaused
-                    startTime = service.startTime
-                    totalPausedDuration = service.totalPausedDuration
+                    isPaused = svc.isPaused
+                    startTime = svc.startTime
+                    totalPausedDuration = svc.totalPausedDuration
                     updateButtonStates()
                     uiUpdateHandler.post(uiUpdateRunnable)
                 }
@@ -126,14 +125,6 @@ class LiveTrackerActivity : AppCompatActivity(), OnMapReadyCallback {
                     }
                     lastValidLocation = newLocation
                 }
-                "HEART_RATE_UPDATE" -> {
-                    val heartRate = intent.getIntExtra("heart_rate", 0)
-                    updateHeartRateUI(heartRate)
-                }
-                "CADENCE_UPDATE" -> {
-                    val cadence = intent.getIntExtra("cadence", 0)
-                    updateCadenceUI(cadence)
-                }
             }
         }
     }
@@ -147,7 +138,7 @@ class LiveTrackerActivity : AppCompatActivity(), OnMapReadyCallback {
 
         // Initialize Map
         val mapFragment = supportFragmentManager
-            .findFragmentById(R.id.map) as SupportMapFragment
+            .findFragmentById(R.id.mapView) as SupportMapFragment
         mapFragment.getMapAsync(this)
 
         // Initialize Performance Modules
@@ -156,8 +147,6 @@ class LiveTrackerActivity : AppCompatActivity(), OnMapReadyCallback {
         // Register broadcast receiver
         val filter = IntentFilter().apply {
             addAction("LOCATION_UPDATE")
-            addAction("HEART_RATE_UPDATE")
-            addAction("CADENCE_UPDATE")
         }
         LocalBroadcastManager.getInstance(this).registerReceiver(locationReceiver, filter)
 
@@ -169,17 +158,13 @@ class LiveTrackerActivity : AppCompatActivity(), OnMapReadyCallback {
     }
 
     private fun initializeViews() {
-        distanceText = findViewById(R.id.distance_text)
-        paceText = findViewById(R.id.pace_text)
-        timeText = findViewById(R.id.time_text)
-        heartRateText = findViewById(R.id.heart_rate_text)
-        cadenceText = findViewById(R.id.cadence_text)
-        startButton = findViewById(R.id.start_button)
-        pauseButton = findViewById(R.id.pause_button)
-        stopButton = findViewById(R.id.stop_button)
+        distanceText = findViewById(R.id.textDistance)
+        paceText = findViewById(R.id.textPace)
+        timeText = findViewById(R.id.textTimer)
+        startButton = findViewById(R.id.btnStart)
+        stopButton = findViewById(R.id.btnStop)
 
         // Initial button states
-        pauseButton.isEnabled = false
         stopButton.isEnabled = false
     }
 
@@ -197,16 +182,6 @@ class LiveTrackerActivity : AppCompatActivity(), OnMapReadyCallback {
         cadenceDetector = CadenceDetector(this)
         trainingLoad = TrainingLoad()
         analyticsManager = AnalyticsManager(this)
-
-        // Setup BLE callbacks
-        bleHeartRateManager.setHeartRateCallback { heartRate ->
-            updateHeartRateUI(heartRate)
-        }
-
-        bleSensorManager.setCadenceCallback { cadence ->
-            cadenceDetector.recordStep()
-            updateCadenceUI(cadence)
-        }
     }
 
     private fun setupButtonListeners() {
@@ -216,10 +191,6 @@ class LiveTrackerActivity : AppCompatActivity(), OnMapReadyCallback {
             } else if (isPaused) {
                 resumeTracking()
             }
-        }
-
-        pauseButton.setOnClickListener {
-            pauseTracking()
         }
 
         stopButton.setOnClickListener {
@@ -305,26 +276,8 @@ class LiveTrackerActivity : AppCompatActivity(), OnMapReadyCallback {
         autoLapManager.reset()
         cadenceDetector.reset()
         trainingLoad.reset()
-        
-        // Start BLE scanning
-        bleHeartRateManager.startScanning()
-        bleSensorManager.startScanning()
 
         Toast.makeText(this, "Tracking started", Toast.LENGTH_SHORT).show()
-    }
-
-    private fun pauseTracking() {
-        isPaused = true
-        pausedTime = System.currentTimeMillis()
-
-        // Pause service
-        trackingService?.pause()
-
-        // Pause performance modules
-        hydrationReminder.pause()
-
-        updateButtonStates()
-        Toast.makeText(this, "Tracking paused", Toast.LENGTH_SHORT).show()
     }
 
     private fun resumeTracking() {
@@ -349,7 +302,7 @@ class LiveTrackerActivity : AppCompatActivity(), OnMapReadyCallback {
         val totalTimeMs = endTime - startTime - totalPausedDuration
         val totalTimeSec = totalTimeMs / 1000
         val avgPace = if (totalDistance > 0) (totalTimeSec / 60.0) / totalDistance else 0.0
-        val avgHeartRate = bleHeartRateManager.getAverageHeartRate()
+        val avgHeartRate = 0 // Placeholder
 
         // Stop service
         val serviceIntent = Intent(this, TrackingService::class.java)
@@ -363,14 +316,12 @@ class LiveTrackerActivity : AppCompatActivity(), OnMapReadyCallback {
 
         // Stop performance modules
         hydrationReminder.stop()
-        bleHeartRateManager.stopScanning()
-        bleSensorManager.stopScanning()
         paceAlertManager.reset()
 
         // Save analytics data
         saveRaceToAnalytics(
             distance = totalDistance,
-            duration = totalTimeSec,
+            duration = totalTimeMs,
             avgPace = avgPace,
             avgHeartRate = avgHeartRate
         )
@@ -393,18 +344,15 @@ class LiveTrackerActivity : AppCompatActivity(), OnMapReadyCallback {
             !isTracking -> {
                 startButton.isEnabled = true
                 startButton.text = "START"
-                pauseButton.isEnabled = false
                 stopButton.isEnabled = false
             }
             isPaused -> {
                 startButton.isEnabled = true
                 startButton.text = "RESUME"
-                pauseButton.isEnabled = false
                 stopButton.isEnabled = true
             }
             else -> {
                 startButton.isEnabled = false
-                pauseButton.isEnabled = true
                 stopButton.isEnabled = true
             }
         }
@@ -413,9 +361,9 @@ class LiveTrackerActivity : AppCompatActivity(), OnMapReadyCallback {
     private fun updateUIFromService() {
         trackingService?.let { service ->
             // Update distance (use service's distance)
-            val distance = service.getTotalDistance()
+            val distance = service.getTotalDistance() / 1000.0 // Convert to km
             totalDistance = distance
-            distanceText.text = String.format("%.2f km", distance)
+            distanceText.text = String.format("🏁 %.2f km", distance)
 
             // Update time
             val elapsedTime = if (isPaused) {
@@ -432,7 +380,7 @@ class LiveTrackerActivity : AppCompatActivity(), OnMapReadyCallback {
             } else {
                 0.0
             }
-            paceText.text = String.format("%.2f min/km", pace)
+            paceText.text = String.format("⏱ %.2f min/km", pace)
 
             // Check pace alerts - only when tracking and not paused
             if (isTracking && !isPaused && distance > 0) {
@@ -444,12 +392,6 @@ class LiveTrackerActivity : AppCompatActivity(), OnMapReadyCallback {
 
             // Check auto-lap
             autoLapManager.checkDistance(distance)
-
-            // Update training load
-            val currentHeartRate = bleHeartRateManager.getCurrentHeartRate()
-            if (currentHeartRate > 0) {
-                trainingLoad.update(currentHeartRate, 1.0) // Update every second
-            }
         }
     }
 
@@ -479,22 +421,6 @@ class LiveTrackerActivity : AppCompatActivity(), OnMapReadyCallback {
         }
     }
 
-    private fun updateHeartRateUI(heartRate: Int) {
-        if (heartRate > 0) {
-            heartRateText.text = "$heartRate bpm"
-        } else {
-            heartRateText.text = "-- bpm"
-        }
-    }
-
-    private fun updateCadenceUI(cadence: Int) {
-        if (cadence > 0) {
-            cadenceText.text = "$cadence spm"
-        } else {
-            cadenceText.text = "-- spm"
-        }
-    }
-
     private fun calculateDistance(start: LatLng, end: LatLng): Double {
         val earthRadius = 6371000.0 // meters
         val dLat = Math.toRadians(end.latitude - start.latitude)
@@ -520,31 +446,46 @@ class LiveTrackerActivity : AppCompatActivity(), OnMapReadyCallback {
         avgPace: Double,
         avgHeartRate: Int
     ) {
-        // Get split times from service
-        val splitTimes = trackingService?.getSplitTimes() ?: emptyList()
-
-        // Calculate calories (rough estimate: 1 kcal per kg per km)
         val sharedPrefs = getSharedPreferences("race_tracker_prefs", Context.MODE_PRIVATE)
+        val raceId = sharedPrefs.getInt("race_id", 1)
+        val runnerId = sharedPrefs.getInt("runner_id", 1)
         val weight = sharedPrefs.getFloat("user_weight", 70f)
-        val calories = (distance * weight).toInt()
-
-        // Create race data
+        
+        val startTimeMs = startTime
+        val endTimeMs = System.currentTimeMillis()
+        val locationPoints = trackingService?.getLocationPoints() ?: emptyList()
+        val splitTimes = trackingService?.getSplitTimes() ?: emptyList()
+        
         val raceData = RaceData(
-            timestamp = System.currentTimeMillis(),
-            distance = distance,
+            raceId = raceId,
+            runnerId = runnerId,
+            startTime = startTimeMs,
+            endTime = endTimeMs,
             duration = duration,
-            avgPace = avgPace,
-            avgHeartRate = avgHeartRate,
-            maxHeartRate = bleHeartRateManager.getMaxHeartRate(),
-            calories = calories,
-            splitTimes = splitTimes.joinToString(",") { String.format("%.2f", it) },
-            trainingLoad = trainingLoad.getLoad()
+            totalDistanceMeters = distance * 1000, // Convert km to meters
+            averageSpeedKmh = if (duration > 0) (distance / (duration / 3600000.0)) else 0.0,
+            maxSpeedKmh = 0.0, // TODO: Calculate from speeds
+            averagePaceMinPerKm = avgPace,
+            bestPaceMinPerKm = 0.0, // TODO: Calculate from splits
+            elevationGainMeters = 0.0, // TODO: Calculate from elevations
+            elevationLossMeters = 0.0,
+            maxElevationMeters = 0.0,
+            minElevationMeters = 0.0,
+            caloriesBurned = distance * weight,
+            averageHeartRate = avgHeartRate,
+            maxHeartRate = trackingService?.getMaxHeartRate() ?: 0,
+            pathPoints = locationPoints,
+            elevations = emptyList(), // TODO: Get from service
+            timestamps = emptyList(), // TODO: Get from service
+            speeds = emptyList(), // TODO: Get from service
+            splitTimes = splitTimes,
+            splitPaces = emptyList() // TODO: Calculate from splits
         )
-
-        // Save to database asynchronously
-        Thread {
+        
+        // Save using coroutine
+        lifecycleScope.launch {
             analyticsManager.saveRace(raceData)
-        }.start()
+        }
     }
 
     override fun onDestroy() {
@@ -560,8 +501,6 @@ class LiveTrackerActivity : AppCompatActivity(), OnMapReadyCallback {
 
         // Stop performance modules
         hydrationReminder.stop()
-        bleHeartRateManager.stopScanning()
-        bleSensorManager.stopScanning()
     }
 
     override fun onRequestPermissionsResult(

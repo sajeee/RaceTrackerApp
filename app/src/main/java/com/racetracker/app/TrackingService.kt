@@ -31,6 +31,40 @@ class TrackingService : Service() {
     private var lastValidLocation: Location? = null
     private var lastUpdateTime = 0L
     
+    // Tracking state
+    var isTracking = false
+        private set
+    var isPaused = false
+        private set
+    var startTime: Long = 0
+        private set
+    private var pauseStartTime: Long = 0
+    var totalPausedDuration: Long = 0
+        private set
+    
+    // Location data
+    private val locationPoints = mutableListOf<LatLng>()
+    private val timestamps = mutableListOf<Long>()
+    private val speeds = mutableListOf<Double>()
+    private val elevations = mutableListOf<Double>()
+    private var totalDistance = 0.0
+    
+    // Heart rate tracking
+    private var currentHeartRate = 0
+    private val heartRateHistory = mutableListOf<Int>()
+    private var maxHeartRate = 0
+    
+    // Split times
+    private val splitTimes = mutableListOf<Long>()
+    
+    inner class LocalBinder : Binder() {
+        fun getService(): TrackingService = this@TrackingService
+    }
+    
+    private val binder = LocalBinder()
+    
+    override fun onBind(intent: Intent?): IBinder = binder
+    
     override fun onCreate() {
         super.onCreate()
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
@@ -68,7 +102,7 @@ class TrackingService : Service() {
         locationCallback = object : LocationCallback() {
             override fun onLocationResult(result: LocationResult) {
                 result.lastLocation?.let { location ->
-                    if (isLocationValid(location)) {
+                    if (isLocationValid(location) && isTracking && !isPaused) {
                         processValidLocation(location)
                     }
                 }
@@ -119,9 +153,29 @@ class TrackingService : Service() {
         }
         
         lastUpdateTime = currentTime
-        lastValidLocation = location
         
+        // Store location data
         val latLng = LatLng(location.latitude, location.longitude)
+        locationPoints.add(latLng)
+        timestamps.add(currentTime)
+        speeds.add((location.speed * 3.6).toDouble()) // Convert m/s to km/h
+        
+        // Calculate elevation if available
+        if (location.hasAltitude()) {
+            elevations.add(location.altitude)
+        } else {
+            elevations.add(0.0)
+        }
+        
+        // Calculate distance
+        lastValidLocation?.let { lastLoc ->
+            val distance = location.distanceTo(lastLoc)
+            if (distance > 0 && distance < 100) { // Filter unrealistic jumps
+                totalDistance += distance
+            }
+        }
+        
+        lastValidLocation = location
         
         // Broadcast to LiveTrackerActivity
         val intent = Intent("LOCATION_UPDATE").apply {
@@ -141,16 +195,108 @@ class TrackingService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         when (intent?.action) {
             ACTION_START -> {
-                startForeground(NOTIFICATION_ID, buildNotification(null))
-                startLocationUpdates()
+                startTracking()
             }
             ACTION_STOP -> {
-                stopLocationUpdates()
-                stopForeground(true)
-                stopSelf()
+                stopTracking()
             }
         }
         return START_STICKY
+    }
+    
+    private fun startTracking() {
+        if (!isTracking) {
+            isTracking = true
+            isPaused = false
+            startTime = System.currentTimeMillis()
+            totalPausedDuration = 0
+            
+            startForeground(NOTIFICATION_ID, buildNotification(null))
+            startLocationUpdates()
+        }
+    }
+    
+    private fun stopTracking() {
+        isTracking = false
+        isPaused = false
+        stopLocationUpdates()
+        stopForeground(true)
+        stopSelf()
+    }
+    
+    fun pause() {
+        if (isTracking && !isPaused) {
+            isPaused = true
+            pauseStartTime = System.currentTimeMillis()
+        }
+    }
+    
+    fun resume() {
+        if (isTracking && isPaused) {
+            isPaused = false
+            val pauseDuration = System.currentTimeMillis() - pauseStartTime
+            totalPausedDuration += pauseDuration
+        }
+    }
+    
+    fun reset() {
+        isTracking = false
+        isPaused = false
+        startTime = 0
+        totalPausedDuration = 0
+        pauseStartTime = 0
+        totalDistance = 0.0
+        locationPoints.clear()
+        timestamps.clear()
+        speeds.clear()
+        elevations.clear()
+        heartRateHistory.clear()
+        currentHeartRate = 0
+        maxHeartRate = 0
+        splitTimes.clear()
+        lastValidLocation = null
+    }
+    
+    fun getTotalDistance(): Double = totalDistance
+    
+    fun getLocationPoints(): List<LatLng> = locationPoints.toList()
+    
+    fun getCurrentHeartRate(): Int = currentHeartRate
+    
+    fun getMaxHeartRate(): Int = maxHeartRate
+    
+    fun getAverageHeartRate(): Int {
+        return if (heartRateHistory.isNotEmpty()) {
+            heartRateHistory.average().toInt()
+        } else {
+            0
+        }
+    }
+    
+    fun getSplitTimes(): List<Long> = splitTimes.toList()
+    
+    fun setHeartRateCallback(callback: (Int) -> Unit) {
+        // Placeholder for BLE heart rate integration
+    }
+    
+    fun setCadenceCallback(callback: (Int) -> Unit) {
+        // Placeholder for BLE cadence integration
+    }
+    
+    fun update(heartRate: Int) {
+        currentHeartRate = heartRate
+        heartRateHistory.add(heartRate)
+        if (heartRate > maxHeartRate) {
+            maxHeartRate = heartRate
+        }
+    }
+    
+    fun startScanning() {
+        // Placeholder for BLE scanning
+    }
+    
+    fun stopScanning() {
+        // Placeholder for BLE scanning
     }
     
     @SuppressLint("MissingPermission")
@@ -186,9 +332,15 @@ class TrackingService : Service() {
             String.format("%.1f km/h", it.speed * 3.6)
         } ?: "Starting..."
         
+        val status = when {
+            isPaused -> "Paused"
+            isTracking -> "Tracking - $speedKmh"
+            else -> "Ready"
+        }
+        
         return NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle("Race Tracker Active")
-            .setContentText("Speed: $speedKmh")
+            .setContentTitle("Race Tracker")
+            .setContentText(status)
             .setSmallIcon(android.R.drawable.ic_menu_mylocation)
             .setContentIntent(pendingIntent)
             .setOngoing(true)
@@ -212,6 +364,4 @@ class TrackingService : Service() {
             }
         }
     }
-    
-    override fun onBind(intent: Intent?): IBinder? = null
 }

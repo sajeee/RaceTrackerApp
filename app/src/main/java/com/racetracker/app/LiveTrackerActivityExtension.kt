@@ -16,7 +16,7 @@ private const val TAG = "LiveTrackerExtension"
 
 /**
  * Save completed race to analytics database
- * FIXED: Uses actual race start time instead of current time when saving
+ * FIXED: Uses correct RaceData constructor with all required fields
  */
 fun LiveTrackerActivity.saveRaceToAnalytics(
     raceStartTime: Long,  // Actual time when race started
@@ -26,7 +26,7 @@ fun LiveTrackerActivity.saveRaceToAnalytics(
     maxSpeed: Double,
     avgHeartRate: Int,
     maxHeartRate: Int,
-    caloriesBurned: Int,
+    calories: Double,
     elevationGain: Double,
     polylinePoints: List<LatLng>
 ) {
@@ -37,37 +37,44 @@ fun LiveTrackerActivity.saveRaceToAnalytics(
 
     CoroutineScope(Dispatchers.Main).launch {
         try {
-            // Use the actual race start time, not System.currentTimeMillis()
+            // Get race and runner IDs from SharedPreferences
+            val sharedPrefs = getSharedPreferences("race_tracker_prefs", MODE_PRIVATE)
+            val raceId = sharedPrefs.getInt("race_id", 1)
+            val runnerId = sharedPrefs.getInt("runner_id", 1)
+            
+            // Create RaceData with correct constructor parameters
             val raceData = RaceData(
-                date = raceStartTime,  // FIXED: Use parameter instead of current time
-                distance = distance,
+                raceId = raceId,
+                runnerId = runnerId,
+                startTime = raceStartTime,
+                endTime = raceStartTime + duration,
                 duration = duration,
-                avgPace = avgPace,
-                maxSpeed = maxSpeed,
-                avgHeartRate = avgHeartRate,
+                totalDistanceMeters = distance * 1000, // Convert km to meters
+                averageSpeedKmh = if (duration > 0) (distance / (duration / 3600000.0)) else 0.0,
+                maxSpeedKmh = maxSpeed,
+                averagePaceMinPerKm = avgPace,
+                bestPaceMinPerKm = 0.0, // TODO: Calculate from splits
+                elevationGainMeters = elevationGain,
+                elevationLossMeters = 0.0, // TODO: Calculate
+                maxElevationMeters = 0.0, // TODO: Calculate
+                minElevationMeters = 0.0, // TODO: Calculate
+                caloriesBurned = calories,
+                averageHeartRate = avgHeartRate,
                 maxHeartRate = maxHeartRate,
-                caloriesBurned = caloriesBurned,
-                elevationGain = elevationGain,
-                splits = "", // Will be populated by AnalyticsManager
-                polyline = polylinePoints.joinToString(";") { "${it.latitude},${it.longitude}" }
+                pathPoints = polylinePoints,
+                elevations = emptyList(), // TODO: Get elevation data
+                timestamps = emptyList(), // TODO: Get timestamps
+                speeds = emptyList(), // TODO: Get speed data
+                splitTimes = emptyList(), // TODO: Get split times
+                splitPaces = emptyList() // TODO: Calculate split paces
             )
 
-            val raceId = analyticsManager.saveRace(
-                distance = distance,
-                duration = duration,
-                avgPace = avgPace,
-                maxSpeed = maxSpeed,
-                avgHeartRate = avgHeartRate,
-                maxHeartRate = maxHeartRate,
-                caloriesBurned = caloriesBurned,
-                elevationGain = elevationGain,
-                polylinePoints = polylinePoints
-            )
+            val savedRaceId = analyticsManager.saveRace(raceData)
 
-            if (raceId > 0) {
+            if (savedRaceId > 0) {
                 val dateStr = SimpleDateFormat("MMM dd, yyyy HH:mm", Locale.getDefault())
                     .format(Date(raceStartTime))
-                Log.d(TAG, "Race saved successfully with ID: $raceId at $dateStr")
+                Log.d(TAG, "Race saved successfully with ID: $savedRaceId at $dateStr")
                 
                 // Show success message to user
                 showToast("Race saved to analytics!")
