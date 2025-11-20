@@ -308,10 +308,11 @@ class LiveTrackerActivity : AppCompatActivity(), OnMapReadyCallback {
         Toast.makeText(this, "Tracking started", Toast.LENGTH_SHORT).show()
     }
 
+    // FIXED: Method name to match TrackingService.pause()
     private fun pauseTracking() {
         if (!isTracking || isPaused) return
 
-        trackingService?.pauseTracking()
+        trackingService?.pause()
         isPaused = true
         pausedTime = System.currentTimeMillis()
         
@@ -321,10 +322,11 @@ class LiveTrackerActivity : AppCompatActivity(), OnMapReadyCallback {
         Toast.makeText(this, "Tracking paused", Toast.LENGTH_SHORT).show()
     }
 
+    // FIXED: Method name to match TrackingService.resume()
     private fun resumeTracking() {
         if (!isTracking || !isPaused) return
 
-        trackingService?.resumeTracking()
+        trackingService?.resume()
         isPaused = false
         totalPausedDuration += System.currentTimeMillis() - pausedTime
         
@@ -337,6 +339,44 @@ class LiveTrackerActivity : AppCompatActivity(), OnMapReadyCallback {
     private fun stopTracking() {
         if (!isTracking) return
 
+        // Calculate final stats BEFORE stopping service
+        trackingService?.let { service ->
+            val duration = System.currentTimeMillis() - startTime - totalPausedDuration
+            val distance = service.getTotalDistance() / 1000.0 // Convert meters to km
+            val avgPace = if (distance > 0) (duration / 60000.0) / distance else 0.0
+            
+            // Get max speed from service
+            val maxSpeed = service.getMaxSpeed()
+            
+            // Get heart rate data
+            val avgHeartRate = service.getAverageHeartRate()
+            val maxHeartRate = service.getMaxHeartRate()
+            
+            // Get route points
+            val routePoints = service.getLocationPoints()
+            
+            // Calculate calories
+            val avgSpeedKmh = if (duration > 0) distance / (duration / 3600000.0) else 0.0
+            val caloriesBurned = calculateCalories(distance, duration / 60000.0, avgSpeedKmh)
+            
+            // Calculate elevation gain
+            val elevationGain = calculateElevationGain(routePoints)
+            
+            // Save to analytics
+            saveRaceToAnalytics(
+                raceStartTime = startTime,
+                distance = distance,
+                duration = duration,
+                avgPace = avgPace,
+                maxSpeed = maxSpeed,
+                avgHeartRate = avgHeartRate,
+                maxHeartRate = maxHeartRate,
+                caloriesBurned = caloriesBurned,
+                elevationGain = elevationGain,
+                polylinePoints = routePoints
+            )
+        }
+
         // Stop service
         trackingService?.stopTracking()
         val serviceIntent = Intent(this, TrackingService::class.java)
@@ -346,27 +386,6 @@ class LiveTrackerActivity : AppCompatActivity(), OnMapReadyCallback {
         if (isServiceBound) {
             unbindService(serviceConnection)
             isServiceBound = false
-        }
-
-        // Calculate final stats
-        val duration = System.currentTimeMillis() - startTime - totalPausedDuration
-        val avgPace = if (totalDistance > 0) (duration / 60000.0) / totalDistance else 0.0
-        
-        // Save to analytics
-        trackingService?.let { service ->
-            saveRaceToAnalytics(
-                raceStartTime = startTime,
-                distance = totalDistance,
-                duration = duration,
-                avgPace = avgPace,
-                maxSpeed = service.maxSpeed.toDouble(),
-                avgHeartRate = service.avgHeartRate,
-                maxHeartRate = service.maxHeartRate,
-                caloriesBurned = calculateCalories(totalDistance, duration / 60000.0, 
-                    (totalDistance / (duration / 3600000.0))),
-                elevationGain = calculateElevationGain(service.routePoints),
-                polylinePoints = service.routePoints
-            )
         }
 
         // Reset state
@@ -418,7 +437,7 @@ class LiveTrackerActivity : AppCompatActivity(), OnMapReadyCallback {
     private fun updateUIFromService() {
         trackingService?.let { service ->
             // Update distance
-            totalDistance = service.totalDistance
+            totalDistance = service.getTotalDistance() / 1000.0 // Convert to km
             distanceText.text = String.format("%.2f km", totalDistance)
 
             // Update time
@@ -435,13 +454,15 @@ class LiveTrackerActivity : AppCompatActivity(), OnMapReadyCallback {
             paceText.text = String.format("%d:%02d /km", paceMin, paceSec)
 
             // Update heart rate
-            if (service.currentHeartRate > 0) {
-                heartRateText.text = "${service.currentHeartRate} bpm"
+            val currentHR = service.getCurrentHeartRate()
+            if (currentHR > 0) {
+                heartRateText.text = "$currentHR bpm"
             }
 
             // Update cadence
-            if (service.currentCadence > 0) {
-                cadenceText.text = "${service.currentCadence} spm"
+            val currentCad = service.getCurrentCadence()
+            if (currentCad > 0) {
+                cadenceText.text = "$currentCad spm"
             }
         }
     }

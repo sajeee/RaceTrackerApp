@@ -31,7 +31,7 @@ class TrackingService : Service() {
     private var lastValidLocation: Location? = null
     private var lastUpdateTime = 0L
     
-    // Tracking state
+    // Tracking state - FIXED: Changed to public for LiveTrackerActivity access
     var isTracking = false
         private set
     var isPaused = false
@@ -49,10 +49,13 @@ class TrackingService : Service() {
     private val elevations = mutableListOf<Double>()
     private var totalDistance = 0.0
     
-    // Heart rate tracking
+    // Heart rate tracking - FIXED: Changed to public for LiveTrackerActivity access
     private var currentHeartRate = 0
     private val heartRateHistory = mutableListOf<Int>()
     private var maxHeartRate = 0
+    
+    // Cadence tracking - ADDED: New property for cadence
+    private var currentCadence = 0
     
     // Split times
     private val splitTimes = mutableListOf<Long>()
@@ -216,7 +219,8 @@ class TrackingService : Service() {
         }
     }
     
-    private fun stopTracking() {
+    // FIXED: Changed to public for LiveTrackerActivity access
+    fun stopTracking() {
         isTracking = false
         isPaused = false
         stopLocationUpdates()
@@ -253,23 +257,46 @@ class TrackingService : Service() {
         heartRateHistory.clear()
         currentHeartRate = 0
         maxHeartRate = 0
+        currentCadence = 0
         splitTimes.clear()
         lastValidLocation = null
     }
     
+    // FIXED: Changed to public for LiveTrackerActivity access
     fun getTotalDistance(): Double = totalDistance
     
+    // FIXED: Changed to public and renamed from getLocationPoints to match usage
     fun getLocationPoints(): List<LatLng> = locationPoints.toList()
     
+    // FIXED: Changed to public for LiveTrackerActivity access
     fun getCurrentHeartRate(): Int = currentHeartRate
     
+    // FIXED: Changed to public for LiveTrackerActivity access
     fun getMaxHeartRate(): Int = maxHeartRate
     
+    // FIXED: Changed to public for LiveTrackerActivity access
     fun getAverageHeartRate(): Int {
         return if (heartRateHistory.isNotEmpty()) {
             heartRateHistory.average().toInt()
         } else {
             0
+        }
+    }
+    
+    // ADDED: New method to get current cadence
+    fun getCurrentCadence(): Int = currentCadence
+    
+    // ADDED: New method to set current cadence
+    fun setCurrentCadence(cadence: Int) {
+        currentCadence = cadence
+    }
+    
+    // ADDED: New method to get max speed
+    fun getMaxSpeed(): Double {
+        return if (speeds.isNotEmpty()) {
+            speeds.maxOrNull() ?: 0.0
+        } else {
+            0.0
         }
     }
     
