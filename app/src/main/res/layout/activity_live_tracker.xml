@@ -9,18 +9,18 @@
     tools:context=".LiveTrackerActivity">
 
     <!-- 🌍 MAP IN BACKGROUND -->
-    <fragment
-        android:id="@+id/mapView"
+     <fragment
+        android:id="@+id/map"
         android:name="com.google.android.gms.maps.SupportMapFragment"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_alignParentTop="true"
-        android:layout_above="@+id/healthMetricsCard"
+        android:layout_above="@+id/statsCard"
         android:layout_centerHorizontal="true"
         android:layout_weight="1"
         android:layout_marginBottom="10dp" />
 
-    <!-- ⏱️ TIMER DISPLAY ON TOP CENTER -->
+    <!-- ⏱️ TIMERDISPLAY ON TOP CENTER -->
     <TextView
         android:id="@+id/time_text"
         android:layout_width="wrap_content"
