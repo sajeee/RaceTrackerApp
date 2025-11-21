@@ -69,33 +69,58 @@ class TrackingService : Service() {
     override fun onCreate() {
         super.onCreate()
 
+        // ✅ CRITICAL: Call startForeground() IMMEDIATELY
+        createNotificationChannel()
+        startForeground(NOTIFICATION_ID, buildInitialNotification())
+
+        // Now do the rest of initialization
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
 
-        // WakeLock (safe)
-        val pm = getSystemService(Context.POWER_SERVICE) as PowerManager
-        wakeLock = pm.newWakeLock(
+        // Acquire WakeLock to prevent CPU from sleeping
+        val powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
+        wakeLock = powerManager.newWakeLock(
             PowerManager.PARTIAL_WAKE_LOCK,
             "RaceTracker::TrackingWakeLock"
-        ).apply { acquire(10 * 60 * 60 * 1000L) }
+        ).apply {
+            acquire(10 * 60 * 60 * 1000L) // 10 hours max
+        }
 
-        createNotificationChannel()
         setupLocationCallback()
     }
 
     /** 🚀🚀 FIX #1 — Start Foreground Immediately When Service Starts */
     @SuppressLint("MissingPermission")
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-
-        // 👉 MUST call immediately to avoid crash
-        val initialNotification = buildNotification(null)
-        startForeground(NOTIFICATION_ID, initialNotification)
-
         when (intent?.action) {
-            ACTION_START -> startTracking()
-            ACTION_STOP -> stopTracking()
+            ACTION_START -> {
+                startTracking()
+            }
+            ACTION_STOP -> {
+                stopTracking()
+            }
         }
-
         return START_STICKY
+    }
+
+    // Add this new method for initial notification
+    private fun buildInitialNotification(): Notification {
+        val notificationIntent = Intent(this, LiveTrackerActivity::class.java)
+        val pendingIntent = PendingIntent.getActivity(
+            this,
+            0,
+            notificationIntent,
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+        )
+
+        return NotificationCompat.Builder(this, CHANNEL_ID)
+            .setContentTitle("Race Tracker")
+            .setContentText("Initializing...")
+            .setSmallIcon(android.R.drawable.ic_menu_mylocation)
+            .setContentIntent(pendingIntent)
+            .setOngoing(true)
+            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .setCategory(NotificationCompat.CATEGORY_SERVICE)
+            .build()
     }
 
     private fun createNotificationChannel() {
@@ -173,14 +198,16 @@ class TrackingService : Service() {
 
     /** 🚀 Do nothing heavy before startForeground (already called earlier) */
     private fun startTracking() {
-        if (isTracking) return
+        if (!isTracking) {
+            isTracking = true
+            isPaused = false
+            startTime = System.currentTimeMillis()
+            totalPausedDuration = 0
 
-        isTracking = true
-        isPaused = false
-        startTime = System.currentTimeMillis()
-        totalPausedDuration = 0L
-
-        startLocationUpdates()
+            // Update notification (no need to call startForeground again)
+            updateNotification(null)
+            startLocationUpdates()
+        }
     }
 
     fun stopTracking() {
@@ -196,6 +223,7 @@ class TrackingService : Service() {
         if (isTracking && !isPaused) {
             isPaused = true
             pauseStartTime = System.currentTimeMillis()
+            updateNotification(lastValidLocation) // ✅ Show "Paused" status
         }
     }
 
@@ -203,6 +231,7 @@ class TrackingService : Service() {
         if (isTracking && isPaused) {
             isPaused = false
             totalPausedDuration += System.currentTimeMillis() - pauseStartTime
+            updateNotification(lastValidLocation) // ✅ Show "Tracking" status
         }
     }
 
@@ -293,7 +322,7 @@ class TrackingService : Service() {
             .build()
     }
 
-    private fun updateNotification(location: Location) {
+    private fun updateNotification(location: Location?) {
         val manager = getSystemService(NotificationManager::class.java)
         manager.notify(NOTIFICATION_ID, buildNotification(location))
     }
