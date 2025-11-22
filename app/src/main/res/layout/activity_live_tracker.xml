@@ -47,7 +47,8 @@
         android:background="@drawable/bg_card_float"
         android:layout_below="@id/timerBar"
         android:layout_marginTop="16dp"
-        android:layout_marginHorizontal="16dp"
+        android:layout_marginLeft="16dp"
+        android:layout_marginRight="16dp"
         android:elevation="14dp">
 
         <!-- HEART RATE -->
@@ -59,6 +60,8 @@
             android:orientation="vertical">
 
             <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
                 android:text="Heart Rate"
                 android:textSize="12sp"
                 android:textColor="@color/white"
@@ -66,6 +69,8 @@
 
             <TextView
                 android:id="@+id/heart_rate_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
                 android:text="-- bpm"
                 android:textColor="@color/strava_orange_dark"
                 android:textSize="20sp"
@@ -89,6 +94,8 @@
             android:orientation="vertical">
 
             <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
                 android:text="Cadence"
                 android:textSize="12sp"
                 android:textColor="@color/white"
@@ -96,6 +103,8 @@
 
             <TextView
                 android:id="@+id/cadence_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
                 android:text="-- spm"
                 android:textColor="@color/strava_orange_dark"
                 android:textSize="20sp"
@@ -113,7 +122,8 @@
         android:gravity="center"
         android:background="@drawable/bg_bottom_blur"
         android:layout_alignParentBottom="true"
-        android:paddingHorizontal="18dp"
+        android:paddingLeft="18dp"
+        android:paddingRight="18dp"
         android:paddingTop="12dp"
         android:elevation="16dp">
 
@@ -126,6 +136,8 @@
             android:orientation="vertical">
 
             <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
                 android:text="Distance"
                 android:textSize="12sp"
                 android:textColor="@color/white"
@@ -133,6 +145,8 @@
 
             <TextView
                 android:id="@+id/distance_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
                 android:text="0.00 km"
                 android:textColor="@color/white"
                 android:textSize="20sp"
@@ -155,6 +169,8 @@
             android:orientation="vertical">
 
             <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
                 android:text="Speed"
                 android:textSize="12sp"
                 android:textColor="@color/white"
@@ -162,6 +178,8 @@
 
             <TextView
                 android:id="@+id/textSpeed"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
                 android:text="0.00 km/h"
                 android:textColor="@color/white"
                 android:textSize="20sp"
@@ -184,6 +202,8 @@
             android:orientation="vertical">
 
             <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
                 android:text="Pace"
                 android:textSize="12sp"
                 android:textColor="@color/white"
@@ -191,6 +211,8 @@
 
             <TextView
                 android:id="@+id/pace_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
                 android:text="0:00 /km"
                 android:textColor="@color/white"
                 android:textSize="20sp"
@@ -208,32 +230,34 @@
         android:layout_centerHorizontal="true"
         android:layout_marginBottom="120dp"
         android:orientation="horizontal"
-        android:gravity="center"
-        android:spacing="10dp">
+        android:gravity="center">
 
         <!-- START -->
         <Button
             android:id="@+id/start_button"
             android:layout_width="70dp"
             android:layout_height="70dp"
+            android:layout_marginEnd="14dp"
             android:background="@drawable/btn_circle_orange"
             android:text="▶"
             android:textColor="@color/white"
             android:textSize="22sp"
-            android:elevation="14dp" />
+            android:elevation="14dp"
+            android:foreground="@drawable/ripple_circle" />
 
         <!-- PAUSE -->
         <Button
             android:id="@+id/pause_button"
             android:layout_width="70dp"
             android:layout_height="70dp"
+            android:layout_marginEnd="14dp"
             android:background="@drawable/btn_circle_dark"
             android:text="⏸"
             android:textColor="@color/white"
             android:textSize="22sp"
             android:enabled="false"
             android:alpha="0.6"
-            android:layout_marginStart="14dp" />
+            android:foreground="@drawable/ripple_circle" />
 
         <!-- STOP -->
         <Button
@@ -246,7 +270,7 @@
             android:textSize="22sp"
             android:enabled="false"
             android:alpha="0.6"
-            android:layout_marginStart="14dp" />
+            android:foreground="@drawable/ripple_circle" />
     </LinearLayout>
 
     <!-- 🏆 SUMMARY OVERLAY -->
@@ -270,6 +294,8 @@
 
             <TextView
                 android:id="@+id/textSummaryTitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
                 android:text="Activity Summary"
                 android:textColor="@color/strava_orange_dark"
                 android:textSize="20sp"
@@ -277,22 +303,70 @@
                 android:gravity="center"
                 android:layout_marginBottom="12dp" />
 
-            <TextView android:id="@+id/textSummaryDistance" android:textSize="16sp" android:textColor="@color/white"/>
-            <TextView android:id="@+id/textSummaryPace" android:textSize="16sp" android:textColor="@color/white"/>
-            <TextView android:id="@+id/textSummarySpeed" android:textSize="16sp" android:textColor="@color/white"/>
-            <TextView android:id="@+id/textSummaryElevation" android:textSize="16sp" android:textColor="@color/white"/>
-            <TextView android:id="@+id/textSummaryDuration" android:textSize="16sp" android:textColor="@color/white"/>
-            <TextView android:id="@+id/textSummaryHeartRate" android:textSize="16sp" android:textColor="@color/white"/>
-            <TextView android:id="@+id/textSummaryCadence" android:textSize="16sp" android:textColor="@color/white"/>
+            <TextView
+                android:id="@+id/textSummaryDistance"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Distance: 0.00 km"
+                android:textSize="16sp"
+                android:textColor="@color/white" />
+
+            <TextView
+                android:id="@+id/textSummaryPace"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Pace: 0 min/km"
+                android:textSize="16sp"
+                android:textColor="@color/white" />
+
+            <TextView
+                android:id="@+id/textSummarySpeed"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Speed: 0 km/h"
+                android:textSize="16sp"
+                android:textColor="@color/white" />
+
+            <TextView
+                android:id="@+id/textSummaryElevation"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Elevation Gain: 0 m"
+                android:textSize="16sp"
+                android:textColor="@color/white" />
+
+            <TextView
+                android:id="@+id/textSummaryDuration"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Duration: 00:00:00"
+                android:textSize="16sp"
+                android:textColor="@color/white" />
+
+            <TextView
+                android:id="@+id/textSummaryHeartRate"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Avg Heart Rate: -- bpm"
+                android:textSize="16sp"
+                android:textColor="@color/white" />
+
+            <TextView
+                android:id="@+id/textSummaryCadence"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Avg Cadence: -- spm"
+                android:textSize="16sp"
+                android:textColor="@color/white" />
 
             <Button
                 android:id="@+id/btnShareSummary"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
                 android:text="Share"
                 android:textColor="@color/white"
                 android:layout_marginTop="14dp"
                 android:backgroundTint="@color/strava_orange"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
                 android:gravity="center" />
         </LinearLayout>
     </LinearLayout>

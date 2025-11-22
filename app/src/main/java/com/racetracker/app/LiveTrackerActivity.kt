@@ -19,6 +19,8 @@ import android.util.Log
 import android.widget.Button
 import android.widget.TextView
 import android.widget.Toast
+import android.view.animation.AnimationUtils
+import android.widget.LinearLayout
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -47,6 +49,9 @@ class LiveTrackerActivity : AppCompatActivity(), OnMapReadyCallback {
     private lateinit var startButton: Button
     private lateinit var pauseButton: Button
     private lateinit var stopButton: Button
+    private lateinit var healthMetricsCard: LinearLayout
+    private lateinit var statsCard: LinearLayout
+    private lateinit var buttonRow: LinearLayout
 
     // Tracking state (UI-side)
     private var isTracking = false
@@ -75,6 +80,7 @@ class LiveTrackerActivity : AppCompatActivity(), OnMapReadyCallback {
             if (isTracking && !isPaused) {
                 updateUIFromService()
             }
+
             uiUpdateHandler.postDelayed(this, 1000) // Update every second
         }
     }
@@ -165,7 +171,7 @@ class LiveTrackerActivity : AppCompatActivity(), OnMapReadyCallback {
             addAction("HEART_RATE_UPDATE")
             addAction("CADENCE_UPDATE")
         }
-        registerReceiver(locationReceiver, filter, Context.RECEIVER_NOT_EXPORTED)
+        registerReceiver(locationReceiver, filter)
 
 
         // Setup button listeners
@@ -203,6 +209,12 @@ class LiveTrackerActivity : AppCompatActivity(), OnMapReadyCallback {
         startButton = findViewById(R.id.start_button)
         pauseButton = findViewById(R.id.pause_button)
         stopButton = findViewById(R.id.stop_button)
+        // ===================
+        // 🧩 CARDS / PANELS
+        // ===================
+        healthMetricsCard = findViewById(R.id.healthMetricsCard)
+        statsCard = findViewById(R.id.statsCard)
+        buttonRow = findViewById(R.id.buttonRow)
 
         // Initial button states
         pauseButton.isEnabled = false
@@ -239,9 +251,15 @@ class LiveTrackerActivity : AppCompatActivity(), OnMapReadyCallback {
         startButton.setOnClickListener {
             if (!isTracking) {
                 startTracking()
+                startButton.startAnimation(AnimationUtils.loadAnimation(this, R.anim.shimmer))
+
             } else if (isPaused) {
                 resumeTracking()
             }
+            else {
+                startButton.clearAnimation()
+            }
+
         }
 
         pauseButton.setOnClickListener {
@@ -311,6 +329,18 @@ class LiveTrackerActivity : AppCompatActivity(), OnMapReadyCallback {
             isCompassEnabled = true
             isMyLocationButtonEnabled = true
         }
+        healthMetricsCard.startAnimation(
+            AnimationUtils.loadAnimation(this, R.anim.fade_in)
+        )
+
+        statsCard.startAnimation(
+            AnimationUtils.loadAnimation(this, R.anim.fade_in)
+        )
+
+        // Slide up buttons
+        buttonRow.startAnimation(
+            AnimationUtils.loadAnimation(this, R.anim.slide_up)
+        )
     }
 
     private fun startTracking() {
@@ -505,7 +535,12 @@ class LiveTrackerActivity : AppCompatActivity(), OnMapReadyCallback {
 
     private fun updateHeartRateUI(heartRate: Int) {
         heartRateText.text = "$heartRate bpm"
+
+        // Pulse animation on heart rate change
+        val pulse = AnimationUtils.loadAnimation(this, R.anim.hr_pulse)
+        heartRateText.startAnimation(pulse)
     }
+
 
     private fun updateCadenceUI(cadence: Double) {
         cadenceText.text = "${cadence.toInt()} spm"
